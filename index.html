@@ -31,6 +31,71 @@
         #play-audio-button { background-color: #17a2b8; margin-right: 10px; }
         #next-sentence-button { background-color: #28a745; display: none; }
         .menu-button { background-color: #6c757d; margin-top: 20px; }
+
+        /* NEUER CSS FÜR DEN TOGGLE SWITCH */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            vertical-align: middle; /* Align with label */
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+        input:checked + .slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+        .slider.round:before {
+            border-radius: 50%;
+        }
+        #error-type-selection label {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Space between radio and text */
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+            color: #444;
+        }
+        #error-type-selection input[type="radio"] {
+            margin: 0; /* Remove default margin for better alignment */
+        }
     </style>
 </head>
 <body>
@@ -44,6 +109,29 @@
             <div id="list-selection-container">
                 <p id="loading-indicator">Lade Listen...</p>
             </div>
+
+            <!-- NEUER BEREICH FÜR FEHLER-MODUS -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left;">
+                <h3>Fehler-Modus (Optional)</h3>
+                <label class="switch">
+                    <input type="checkbox" id="error-mode-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <label for="error-mode-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Fehler aktivieren</label>
+
+                <div id="error-type-selection" style="display: none; margin-top: 15px;">
+                    <h4>Fehlerart auswählen:</h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label><input type="radio" name="errorType" value="missingLetter"> Buchstabe fehlt (z. B. Tisch → Tsch)</label>
+                        <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht (z. B. Maus → Muas)</label>
+                        <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe ersetzt (z. B. Ball → Balt)</label>
+                        <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)</label>
+                        <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)</label>
+                        <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)</label>
+                    </div>
+                </div>
+            </div>
+            <!-- ENDE NEUER BEREICH FÜR FEHLER-MODUS -->
         </div>
 
         <!-- Spiel-Ansicht -->
@@ -85,12 +173,22 @@
         const backToMenuGameBtn = document.getElementById('back-to-menu-button-game');
         const backToMenuFinishBtn = document.getElementById('back-to-menu-button-finish');
         
+        // NEUE DOM-ELEMENTE FÜR FEHLER-MODUS
+        const errorModeToggle = document.getElementById('error-mode-toggle');
+        const errorTypeSelection = document.getElementById('error-type-selection');
+        const errorTypeRadios = document.querySelectorAll('input[name="errorType"]');
+        
         // Spielzustand
         let allSentences = [];
         let currentSentenceIndex = 0;
-        let originalWords = [];
+        let originalWords = []; // Enthält immer die korrekten Wörter für den Vergleich
         let reconstructedWords = [];
         let germanVoice = null;
+
+        // NEUE SPIELZUSTÄNDE FÜR FEHLER-MODUS
+        let errorModeEnabled = false;
+        let selectedErrorType = null; // Speichert den Wert des ausgewählten Radio-Buttons
+
 
         // --- Initialisierung und Navigation ---
 
@@ -99,11 +197,25 @@
         backToMenuGameBtn.addEventListener('click', showStartView);
         backToMenuFinishBtn.addEventListener('click', showStartView);
         restartButton.addEventListener('click', () => startGame(allSentences));
-
-        // HIER IST DIE KORREKTUR: Die fehlenden Event Listener für die Spiel-Buttons
         playAudioButton.addEventListener('click', playCurrentSentence);
-        nextSentenceButton.addEventListener('click', loadNextSentence); // DIESE ZEILE HAT GEFEHLT
+        nextSentenceButton.addEventListener('click', loadNextSentence);
 
+        // NEUE EVENT LISTENER FÜR FEHLER-MODUS
+        errorModeToggle.addEventListener('change', () => {
+            errorModeEnabled = errorModeToggle.checked;
+            errorTypeSelection.style.display = errorModeEnabled ? 'block' : 'none';
+            // Wenn der Fehler-Modus deaktiviert wird, Zustand zurücksetzen
+            if (!errorModeEnabled) {
+                selectedErrorType = null;
+                errorTypeRadios.forEach(radio => radio.checked = false);
+            }
+        });
+
+        errorTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                selectedErrorType = event.target.value;
+            });
+        });
 
         function showView(viewToShow) {
             document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -113,10 +225,16 @@
         function showStartView() {
             allSentences = [];
             currentSentenceIndex = 0;
+            // Fehler-Modus UI und Zustand zurücksetzen, wenn ins Menü zurückgekehrt wird
+            errorModeEnabled = false;
+            selectedErrorType = null;
+            errorModeToggle.checked = false;
+            errorTypeSelection.style.display = 'none';
+            errorTypeRadios.forEach(radio => radio.checked = false);
             showView(startView);
         }
 
-        // --- Laden der Daten ---
+        // --- Laden der Daten (unverändert) ---
 
         async function loadMasterList() {
             try {
@@ -151,13 +269,19 @@
             });
         }
 
-        // --- Spiellogik (unverändert) ---
+        // --- Spiellogik (mit Fehler-Modus Anpassung) ---
         
         function startGame(sentences) {
             if (!sentences || sentences.length === 0) {
                 alert('Diese Liste enthält keine Sätze.');
                 return;
             }
+            // Prüfen, ob Fehler-Modus aktiviert ist, aber keine Fehlerart ausgewählt wurde
+            if (errorModeEnabled && !selectedErrorType) {
+                alert('Bitte wählen Sie eine Fehlerart aus, um den Fehler-Modus zu starten.');
+                return;
+            }
+
             allSentences = sentences;
             currentSentenceIndex = 0;
             showView(gameView);
@@ -175,17 +299,171 @@
             nextSentenceButton.style.display = 'none';
             updateReconstructionDisplay();
             progressIndicator.textContent = `Satz ${index + 1} von ${allSentences.length}`;
+
             const currentSentence = allSentences[index];
+            // originalWords enthält immer die korrekten Wörter für den Vergleich
             originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
-            const shuffledWords = [...originalWords].sort(() => Math.random() - 0.5);
+
+            let wordsToDisplayInPool = [...originalWords]; // Start mit den korrekten Wörtern
+
+            // FEHLER GENERIERUNG HIER
+            if (errorModeEnabled && selectedErrorType) {
+                const numWords = wordsToDisplayInPool.length;
+                // Maximum 30% der Wörter, aber nicht mehr als 3 Fehler pro Satz
+                const maxErrors = Math.min(Math.ceil(numWords * 0.3), 3); 
+                // Mindestens 1 Fehler, maximal `maxErrors`
+                const numErrors = maxErrors > 0 ? (Math.floor(Math.random() * maxErrors) + 1) : 0; 
+
+                let errorIndices = new Set();
+                while (errorIndices.size < numErrors && errorIndices.size < numWords) {
+                    errorIndices.add(Math.floor(Math.random() * numWords));
+                }
+                
+                wordsToDisplayInPool = wordsToDisplayInPool.map((word, idx) => {
+                    if (errorIndices.has(idx)) {
+                        return generateError(word, selectedErrorType);
+                    }
+                    return word;
+                });
+            }
+
+            const shuffledWords = [...wordsToDisplayInPool].sort(() => Math.random() - 0.5);
             displayWords(shuffledWords);
             playCurrentSentence();
         }
         
+        // HILFSFUNKTION FÜR FEHLERGENERIERUNG
+        function generateError(word, errorType) {
+            // Für sehr kurze Wörter (<2 Zeichen), überspringen wir bestimmte Fehlertypen,
+            // da sie sonst zu leeren oder bedeutungslosen Wörtern führen könnten.
+            // Groß-/Kleinschreibung kann auch bei einem Zeichen angewendet werden.
+            if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {
+                return word;
+            }
+
+            let modifiedWord = word;
+            let chars = word.split('');
+
+            // Hilfsfunktion, um die Groß-/Kleinschreibung des ursprünglichen Zeichens beizubehalten
+            const preserveCase = (originalChar, newChar) => {
+                if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) {
+                    return newChar.toUpperCase();
+                }
+                return newChar.toLowerCase();
+            };
+
+            switch (errorType) {
+                case 'missingLetter': // Buchstabe fehlt (z. B. Tisch → Tsch)
+                    if (chars.length > 1) { 
+                        const indexToRemove = Math.floor(Math.random() * chars.length);
+                        chars.splice(indexToRemove, 1);
+                        modifiedWord = chars.join('');
+                    }
+                    break;
+                case 'swappedLetters': // Buchstaben vertauscht (z. B. Maus → Muas)
+                    if (chars.length > 1) { 
+                        const index1 = Math.floor(Math.random() * (chars.length - 1));
+                        const index2 = index1 + 1;
+                        [chars[index1], chars[index2]] = [chars[index2], chars[index1]];
+                        modifiedWord = chars.join('');
+                    }
+                    break;
+                case 'replacedLetter': // Falscher Buchstabe ersetzt (z. B. Ball → Balt)
+                    if (chars.length > 0) {
+                        const indexToReplace = Math.floor(Math.random() * chars.length);
+                        const originalChar = chars[indexToReplace].toLowerCase();
+                        const alphabet = 'abcdefghijklmnopqrstuvwxyzäöüß'; 
+                        let replacementChar = originalChar;
+                        let attempts = 0;
+                        while (replacementChar === originalChar && attempts < 10) { // Sicherstellen, dass es ein anderer Buchstabe ist
+                            replacementChar = alphabet[Math.floor(Math.random() * alphabet.length)];
+                            attempts++;
+                        }
+                        chars[indexToReplace] = preserveCase(chars[indexToReplace], replacementChar);
+                        modifiedWord = chars.join('');
+                    }
+                    break;
+                case 'duplicatedLetters': // Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)
+                    if (chars.length > 0) {
+                        const indexToDuplicate = Math.floor(Math.random() * chars.length);
+                        chars.splice(indexToDuplicate, 0, chars[indexToDuplicate]);
+                        modifiedWord = chars.join('');
+                    }
+                    break;
+                case 'phoneticallySimilar': // Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)
+                    const phoneticSubstitutions = {
+                        'b': ['p'], 'p': ['b'],
+                        'd': ['t'], 't': ['d'],
+                        'g': ['k'], 'k': ['g'],
+                        'f': ['v'], 'v': ['f'],
+                        's': ['z'], 'z': ['s'],
+                        // Weitere gängige deutsche phonetische Verwechslungen (einzelne Zeichen) könnten hier hinzugefügt werden
+                    };
+
+                    let replaced = false;
+                    for (let i = 0; i < chars.length; i++) {
+                        const charLower = chars[i].toLowerCase();
+                        if (phoneticSubstitutions[charLower]) {
+                            const subs = phoneticSubstitutions[charLower];
+                            const newChar = subs[Math.floor(Math.random() * subs.length)];
+                            chars[i] = preserveCase(chars[i], newChar);
+                            replaced = true;
+                            break; // Nur ein Zeichen pro Wort ersetzen für Einfachheit
+                        }
+                    }
+                    if (replaced) {
+                        modifiedWord = chars.join('');
+                    } else {
+                        // Fallback: Wenn keine spezifische phonetische Substitution gefunden wird, versuche replacedLetter
+                        // Dies stellt sicher, dass ein Fehler eingeführt wird, falls möglich
+                        if (word.length > 0) {
+                             return generateError(word, 'replacedLetter');
+                        }
+                    }
+                    break;
+                case 'capitalization': // Groß- und Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)
+                    if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { // Nur wenn das erste Zeichen ein Buchstabe ist
+                        if (chars[0] === chars[0].toUpperCase()) {
+                            chars[0] = chars[0].toLowerCase();
+                        } else {
+                            chars[0] = chars[0].toUpperCase();
+                        }
+                        modifiedWord = chars.join('');
+                    }
+                    break;
+            }
+
+            // Sicherstellen, dass sich das Wort tatsächlich geändert hat, um triviale "Fehler" zu vermeiden
+            return modifiedWord === word ? word : modifiedWord;
+        }
+
+
+        // Die folgenden Funktionen bleiben unverändert, da sie mit der neuen Logik kompatibel sind.
         function displayWords(words) { wordPool.innerHTML = ''; words.forEach(word => { const button = document.createElement('button'); button.textContent = word; button.classList.add('word-button'); button.addEventListener('click', () => handleWordClick(word, button)); wordPool.appendChild(button); }); }
         function handleWordClick(word, button) { button.disabled = true; reconstructedWords.push(word); updateReconstructionDisplay(); checkSentence(); }
         function updateReconstructionDisplay() { currentReconstruction.textContent = reconstructedWords.length > 0 ? reconstructedWords.join(' ') : '\u00A0'; }
-        function checkSentence() { const reconstructed = reconstructedWords.join(' '); const original = originalWords.slice(0, reconstructedWords.length).join(' '); if (reconstructed !== original) { feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!'; feedbackMessage.className = 'incorrect'; setTimeout(() => { reconstructedWords = []; updateReconstructionDisplay(); feedbackMessage.textContent = ''; document.querySelectorAll('.word-button').forEach(btn => btn.disabled = false); }, 1500); } else if (reconstructedWords.length === originalWords.length) { feedbackMessage.textContent = 'Super, das ist richtig!'; feedbackMessage.className = 'correct'; nextSentenceButton.style.display = 'inline-block'; } }
+        
+        function checkSentence() { 
+            const reconstructed = reconstructedWords.join(' '); 
+            // Wichtig: `originalWords` enthält immer die korrekten Wörter für den Vergleich
+            const original = originalWords.slice(0, reconstructedWords.length).join(' '); 
+            
+            if (reconstructed !== original) { 
+                feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!'; 
+                feedbackMessage.className = 'incorrect'; 
+                setTimeout(() => { 
+                    reconstructedWords = []; 
+                    updateReconstructionDisplay(); 
+                    feedbackMessage.textContent = ''; 
+                    document.querySelectorAll('.word-button').forEach(btn => btn.disabled = false); 
+                }, 1500); 
+            } else if (reconstructedWords.length === originalWords.length) { 
+                feedbackMessage.textContent = 'Super, das ist richtig!'; 
+                feedbackMessage.className = 'correct'; 
+                nextSentenceButton.style.display = 'inline-block'; 
+            } 
+        }
+
         function loadNextSentence() { currentSentenceIndex++; loadSentence(currentSentenceIndex); }
 
         // --- Sprachausgabe (unverändert) ---
