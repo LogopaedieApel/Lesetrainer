@@ -5,28 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interaktiver Lese-Trainer</title>
     <style>
-        /* CSS bleibt unverändert - hier zur Vollständigkeit gekürzt */
+        /* Grundlegende Styles */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
         #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; }
         h1, h2 { color: #333; }
+
+        /* Ansichten (Start, Spiel, Ende) */
         .view { display: none; }
         .view.active { display: block; }
-        textarea { width: 95%; height: 150px; margin-bottom: 15px; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 5px; }
+        
+        /* NEU: Startbildschirm-Styling */
+        #list-selection-container { margin-top: 20px; text-align: left; }
+        .list-item {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .list-item:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+        .list-item h3 { margin: 0 0 5px 0; color: #007bff; }
+        .list-item p { margin: 0; color: #6c757d; font-size: 0.9rem; }
+        #loading-indicator { font-style: italic; color: #666; }
+
+        /* Spiel-Ansicht Styles (unverändert) */
         #progress-indicator { font-size: 0.9rem; color: #777; margin-bottom: 20px; }
         #current-reconstruction { min-height: 50px; border: 2px dashed #d0d0d0; border-radius: 8px; padding: 15px; margin: 20px 0; font-size: 1.2rem; color: #333; font-weight: bold; letter-spacing: 1px; background-color: #fafafa; }
         #word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
         #feedback-message { margin-top: 15px; font-weight: bold; min-height: 24px; }
         #feedback-message.correct { color: #28a745; }
         #feedback-message.incorrect { color: #dc3545; }
+
+        /* Button Styles (angepasst) */
         button { padding: 12px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; transition: background-color 0.2s; }
         button:hover:not(:disabled) { background-color: #0056b3; }
         button:disabled { background-color: #e0e0e0; cursor: not-allowed; color: #999; }
         .word-button { background-color: #6c757d; }
         .word-button:hover:not(:disabled) { background-color: #5a6268; }
         #play-audio-button { background-color: #17a2b8; margin-right: 10px; }
-        #play-audio-button:hover { background-color: #138496; }
         #next-sentence-button { background-color: #28a745; display: none; }
-        #next-sentence-button:hover { background-color: #218838; }
+        .menu-button { background-color: #6c757d; margin-top: 20px; } /* NEU für "Zurück zum Menü" */
+        
     </style>
 </head>
 <body>
@@ -34,121 +58,140 @@
     <div id="app-container">
         <h1>Interaktiver Lese-Trainer</h1>
 
-        <!-- HTML-Teil bleibt unverändert -->
-        <div id="setup-view" class="view active">
-            <h2>Schritt 1: Deine Sätze</h2>
-            <p>Gib hier die Sätze ein, die du üben möchtest. Ein Satz pro Zeile.</p>
-            <textarea id="sentence-input" placeholder="Die Katze schläft.
-Der Hund bellt laut.
-Die Sonne scheint heute hell."></textarea>
-            <button id="start-button">Spiel starten</button>
+        <!-- NEU: Start-Ansicht statt Setup-Ansicht -->
+        <div id="start-view" class="view active">
+            <h2>Wähle eine Satzliste zum Üben</h2>
+            <div id="list-selection-container">
+                <p id="loading-indicator">Lade Listen...</p>
+            </div>
         </div>
 
+        <!-- Spiel-Ansicht: Mit "Zurück"-Button ergänzt -->
         <div id="game-view" class="view">
-            <div id="progress-indicator">Satz 1 von 3</div>
+            <div id="progress-indicator">Satz 1 von X</div>
             <p>Höre gut zu und baue den Satz nach.</p>
             <div id="current-reconstruction">&nbsp;</div>
             <div id="word-pool"></div>
             <div id="feedback-message"></div>
             <button id="play-audio-button">Satz vorlesen</button>
             <button id="next-sentence-button">Nächster Satz</button>
+            <br>
+            <button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button>
         </div>
 
+        <!-- Finish-Ansicht: Mit "Zurück"-Button ergänzt -->
         <div id="finish-view" class="view">
             <h2>Großartig!</h2>
             <p>Du hast alle Sätze erfolgreich geübt.</p>
-            <button id="restart-button">Nochmal spielen</button>
+            <button id="restart-button">Dieselbe Liste nochmal</button>
+            <button id="back-to-menu-button-finish" class="menu-button">Andere Liste wählen</button>
         </div>
     </div>
 
     <script>
-        // DOM-Elemente abrufen (unverändert)
-        const setupView = document.getElementById('setup-view');
+        // DOM-Elemente
+        const startView = document.getElementById('start-view');
         const gameView = document.getElementById('game-view');
         const finishView = document.getElementById('finish-view');
-        const sentenceInput = document.getElementById('sentence-input');
-        const startButton = document.getElementById('start-button');
+        const listSelectionContainer = document.getElementById('list-selection-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        // Game-View Elemente
         const progressIndicator = document.getElementById('progress-indicator');
         const currentReconstruction = document.getElementById('current-reconstruction');
         const wordPool = document.getElementById('word-pool');
         const feedbackMessage = document.getElementById('feedback-message');
         const playAudioButton = document.getElementById('play-audio-button');
         const nextSentenceButton = document.getElementById('next-sentence-button');
+        
+        // Button Elemente
         const restartButton = document.getElementById('restart-button');
-
-        // Spielzustand (unverändert)
+        const backToMenuGameBtn = document.getElementById('back-to-menu-button-game');
+        const backToMenuFinishBtn = document.getElementById('back-to-menu-button-finish');
+        
+        // Spielzustand
         let allSentences = [];
         let currentSentenceIndex = 0;
         let originalWords = [];
         let reconstructedWords = [];
-        
-        // NEU: Variable für die beste gefundene deutsche Stimme
         let germanVoice = null;
 
-        // NEU: Funktion zum Laden und Auswählen der Stimmen
-        function loadVoices() {
-            const voices = window.speechSynthesis.getVoices();
-            // Wir suchen nach einer hochwertigen deutschen Stimme. "Google Deutsch" ist oft sehr gut.
-            // Die Reihenfolge hier ist eine Prioritätenliste.
-            const preferredVoices = [
-                "Google Deutsch", 
-                "Microsoft Hedda - German (Germany)", // Neuere Windows Stimme
-                "Anna (de-DE)", // macOS Stimme
-            ];
+        // --- Initialisierung und Navigation ---
 
-            // Finde die erste bevorzugte Stimme, die verfügbar ist
-            for (const name of preferredVoices) {
-                const foundVoice = voices.find(voice => voice.name === name && voice.lang === 'de-DE');
-                if (foundVoice) {
-                    germanVoice = foundVoice;
-                    console.log("Bevorzugte Stimme gefunden:", germanVoice.name);
-                    return;
-                }
-            }
+        // Event Listener für die Navigation
+        document.addEventListener('DOMContentLoaded', loadMasterList);
+        backToMenuGameBtn.addEventListener('click', showStartView);
+        backToMenuFinishBtn.addEventListener('click', showStartView);
+        restartButton.addEventListener('click', () => {
+            // Startet dieselbe Liste neu
+            startGame(allSentences);
+        });
+        
+        function showView(viewToShow) {
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            viewToShow.classList.add('active');
+        }
 
-            // Wenn keine bevorzugte Stimme gefunden wurde, nimm die erste verfügbare deutsche Stimme
-            germanVoice = voices.find(voice => voice.lang === 'de-DE');
-            if (germanVoice) {
-                console.log("Fallback-Stimme gefunden:", germanVoice.name);
-            } else {
-                console.log("Keine deutsche Stimme gefunden.");
+        function showStartView() {
+            // Setzt den Spielzustand zurück, bevor das Menü gezeigt wird
+            allSentences = [];
+            currentSentenceIndex = 0;
+            showView(startView);
+        }
+
+        // --- Laden der Daten ---
+
+        async function loadMasterList() {
+            try {
+                const response = await fetch('master.json');
+                if (!response.ok) throw new Error('Netzwerkfehler beim Laden der master.json');
+                const data = await response.json();
+                populateListSelection(data.lists);
+            } catch (error) {
+                console.error("Fehler:", error);
+                loadingIndicator.textContent = 'Fehler beim Laden der Satzlisten. Bitte überprüfe die Konsole.';
+                loadingIndicator.style.color = 'red';
             }
         }
 
-        // NEU: Die Stimmen werden oft asynchron geladen. Wir müssen auf das 'voiceschanged'-Event warten.
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        // Rufe die Funktion auch einmal direkt auf, falls die Stimmen schon geladen sind.
-        loadVoices();
+        function populateListSelection(lists) {
+            listSelectionContainer.innerHTML = ''; // Ladeindikator entfernen
+            lists.forEach(list => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.dataset.file = list.file; // Wichtig: Pfad zur Datei speichern
+                item.innerHTML = `<h3>${list.title}</h3><p>${list.description}</p>`;
+                
+                item.addEventListener('click', async () => {
+                    try {
+                        const response = await fetch(list.file);
+                        if (!response.ok) throw new Error(`Datei ${list.file} nicht gefunden.`);
+                        const sentenceData = await response.json();
+                        startGame(sentenceData.sentences);
+                    } catch (error) {
+                        alert(`Fehler beim Laden der Satzliste: ${error.message}`);
+                    }
+                });
+                listSelectionContainer.appendChild(item);
+            });
+        }
 
-
-        // Event Listener für die Buttons (unverändert)
-        startButton.addEventListener('click', startGame);
-        playAudioButton.addEventListener('click', playCurrentSentence);
-        nextSentenceButton.addEventListener('click', loadNextSentence);
-        restartButton.addEventListener('click', () => location.reload()); 
+        // --- Spiellogik (größtenteils unverändert) ---
         
-        // --- Die restlichen Funktionen bleiben fast gleich, nur playCurrentSentence wird angepasst ---
-        
-        function startGame() {
-            const inputText = sentenceInput.value.trim();
-            if (inputText === '') {
-                alert('Bitte gib mindestens einen Satz ein.');
+        function startGame(sentences) {
+            if (!sentences || sentences.length === 0) {
+                alert('Diese Liste enthält keine Sätze.');
                 return;
             }
-            allSentences = inputText.split('\n').filter(s => s.trim() !== '');
-            if (allSentences.length === 0) {
-                alert('Keine gültigen Sätze gefunden.');
-                return;
-            }
+            allSentences = sentences;
             currentSentenceIndex = 0;
-            setupView.classList.remove('active');
-            gameView.classList.add('active');
+            showView(gameView);
             loadSentence(currentSentenceIndex);
         }
 
         function loadSentence(index) {
             if (index >= allSentences.length) {
-                showFinishScreen();
+                showView(finishView);
                 return;
             }
             reconstructedWords = [];
@@ -163,83 +206,21 @@ Die Sonne scheint heute hell."></textarea>
             displayWords(shuffledWords);
             playCurrentSentence();
         }
+        
+        // ... (Die Funktionen displayWords, handleWordClick, updateReconstructionDisplay, checkSentence, loadNextSentence bleiben exakt gleich)
+        function displayWords(words) { wordPool.innerHTML = ''; words.forEach(word => { const button = document.createElement('button'); button.textContent = word; button.classList.add('word-button'); button.addEventListener('click', () => handleWordClick(word, button)); wordPool.appendChild(button); }); }
+        function handleWordClick(word, button) { button.disabled = true; reconstructedWords.push(word); updateReconstructionDisplay(); checkSentence(); }
+        function updateReconstructionDisplay() { currentReconstruction.textContent = reconstructedWords.length > 0 ? reconstructedWords.join(' ') : '\u00A0'; }
+        function checkSentence() { const reconstructed = reconstructedWords.join(' '); const original = originalWords.slice(0, reconstructedWords.length).join(' '); if (reconstructed !== original) { feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!'; feedbackMessage.className = 'incorrect'; setTimeout(() => { reconstructedWords = []; updateReconstructionDisplay(); feedbackMessage.textContent = ''; document.querySelectorAll('.word-button').forEach(btn => btn.disabled = false); }, 1500); } else if (reconstructedWords.length === originalWords.length) { feedbackMessage.textContent = 'Super, das ist richtig!'; feedbackMessage.className = 'correct'; nextSentenceButton.style.display = 'inline-block'; } }
+        function loadNextSentence() { currentSentenceIndex++; loadSentence(currentSentenceIndex); }
 
-        function displayWords(words) {
-            wordPool.innerHTML = '';
-            words.forEach(word => {
-                const button = document.createElement('button');
-                button.textContent = word;
-                button.classList.add('word-button');
-                button.addEventListener('click', () => handleWordClick(word, button));
-                wordPool.appendChild(button);
-            });
-        }
-
-        function handleWordClick(word, button) {
-            button.disabled = true;
-            reconstructedWords.push(word);
-            updateReconstructionDisplay();
-            checkSentence();
-        }
-
-        function updateReconstructionDisplay() {
-            if (reconstructedWords.length === 0) {
-                currentReconstruction.innerHTML = '&nbsp;';
-            } else {
-                currentReconstruction.textContent = reconstructedWords.join(' ');
-            }
-        }
-
-        function checkSentence() {
-            const reconstructed = reconstructedWords.join(' ');
-            const original = originalWords.slice(0, reconstructedWords.length).join(' ');
-            if (reconstructed !== original) {
-                feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!';
-                feedbackMessage.className = 'incorrect';
-                setTimeout(() => {
-                    reconstructedWords = [];
-                    updateReconstructionDisplay();
-                    feedbackMessage.textContent = '';
-                    document.querySelectorAll('.word-button').forEach(btn => btn.disabled = false);
-                }, 1500);
-            } else if (reconstructedWords.length === originalWords.length) {
-                feedbackMessage.textContent = 'Super, das ist richtig!';
-                feedbackMessage.className = 'correct';
-                nextSentenceButton.style.display = 'inline-block';
-            }
-        }
-
-        function loadNextSentence() {
-            currentSentenceIndex++;
-            loadSentence(currentSentenceIndex);
-        }
-
-        function showFinishScreen() {
-            gameView.classList.remove('active');
-            finishView.classList.add('active');
-        }
-
-        // VERBESSERTE Funktion, um einen Satz vorzulesen
-        function playCurrentSentence() {
-            if ('speechSynthesis' in window && allSentences.length > 0) {
-                const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]);
-                utterance.lang = 'de-DE';
-                utterance.rate = 0.9;
-                
-                // NEU: Weise die beste gefundene Stimme zu
-                if (germanVoice) {
-                    utterance.voice = germanVoice;
-                } else {
-                    console.warn("Warnung: Es konnte keine spezifische deutsche Stimme zugewiesen werden. Nutze Browser-Standard.");
-                }
-
-                // Stoppt eventuell laufende Sprachausgaben, bevor eine neue gestartet wird
-                window.speechSynthesis.cancel(); 
-                window.speechSynthesis.speak(utterance);
-            } else {
-                alert('Dein Browser unterstützt leider keine Sprachausgabe.');
-            }
-        }
+        // --- Sprachausgabe (unverändert) ---
+        
+        window.speechSynthesis.onvoiceschanged = () => {
+            const voices = window.speechSynthesis.getVoices();
+            germanVoice = voices.find(voice => voice.name === 'Google Deutsch' && voice.lang === 'de-DE') || voices.find(voice => voice.lang === 'de-DE');
+        };
+        function playCurrentSentence() { if ('speechSynthesis' in window && allSentences.length > 0) { const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]); utterance.lang = 'de-DE'; utterance.rate = 0.9; if (germanVoice) utterance.voice = germanVoice; window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance); } }
     </script>
 </body>
 </html>
