@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interaktiver Lese-Trainer</title>
     <style>
-        /* CSS bleibt unverändert - hier zur Vollständigkeit gekürzt */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
         #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; }
         h1, h2 { color: #333; }
@@ -96,6 +95,25 @@
         #error-type-selection input[type="radio"] {
             margin: 0; /* Remove default margin for better alignment */
         }
+        /* NEUER CSS FÜR DEN SLIDER */
+        #error-frequency-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        #error-frequency-slider {
+            width: calc(100% - 70px); /* Adjust width to leave space for value */
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        #error-frequency-value {
+            font-weight: bold;
+            color: #007bff;
+            display: inline-block;
+            width: 20px; /* Fixed width for consistent display */
+            text-align: right;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -122,13 +140,23 @@
                 <div id="error-type-selection" style="display: none; margin-top: 15px;">
                     <h4>Fehlerart auswählen:</h4>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label><input type="radio" name="errorType" value="missingLetter"> Buchstabe fehlt (z. B. Tisch → Tsch)</label>
+                        <label><input type="radio" name="errorType" value="missingLetter" checked> Buchstabe fehlt (z. B. Tisch → Tsch)</label>
                         <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht (z. B. Maus → Muas)</label>
                         <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe ersetzt (z. B. Ball → Balt)</label>
                         <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)</label>
                         <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)</label>
                         <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)</label>
                     </div>
+
+                    <!-- NEUER BEREICH FÜR FEHLER-HÄUFIGKEIT -->
+                    <div id="error-frequency-container">
+                        <h4>Fehlerhäufigkeit pro Satz:</h4>
+                        <input type="range" id="error-frequency-slider" min="1" max="5" value="1">
+                        <span id="error-frequency-value">1</span> Fehler
+                        <p style="font-size: 0.85em; color: #666; margin-top: 5px;">(Anzahl der Wörter mit Fehlern)</p>
+                    </div>
+                    <!-- ENDE FEHLER-HÄUFIGKEIT -->
+
                 </div>
             </div>
             <!-- ENDE NEUER BEREICH FÜR FEHLER-MODUS -->
@@ -177,6 +205,8 @@
         const errorModeToggle = document.getElementById('error-mode-toggle');
         const errorTypeSelection = document.getElementById('error-type-selection');
         const errorTypeRadios = document.querySelectorAll('input[name="errorType"]');
+        const errorFrequencySlider = document.getElementById('error-frequency-slider'); // Neu
+        const errorFrequencyValueSpan = document.getElementById('error-frequency-value'); // Neu
         
         // Spielzustand
         let allSentences = [];
@@ -187,13 +217,21 @@
 
         // NEUE SPIELZUSTÄNDE FÜR FEHLER-MODUS
         let errorModeEnabled = false;
-        let selectedErrorType = null; // Speichert den Wert des ausgewählten Radio-Buttons
+        let selectedErrorType = 'missingLetter'; // Standardwert beim Start
+        let selectedErrorFrequency = 1; // Standardwert für Fehlerhäufigkeit (1-5)
 
 
         // --- Initialisierung und Navigation ---
 
         // Event Listener
-        document.addEventListener('DOMContentLoaded', loadMasterList);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMasterList();
+            // Initialen Wert für den Slider anzeigen
+            errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
+            // Sicherstellen, dass der erste Radio-Button standardmäßig ausgewählt ist
+            document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true;
+        });
+
         backToMenuGameBtn.addEventListener('click', showStartView);
         backToMenuFinishBtn.addEventListener('click', showStartView);
         restartButton.addEventListener('click', () => startGame(allSentences));
@@ -206,8 +244,12 @@
             errorTypeSelection.style.display = errorModeEnabled ? 'block' : 'none';
             // Wenn der Fehler-Modus deaktiviert wird, Zustand zurücksetzen
             if (!errorModeEnabled) {
-                selectedErrorType = null;
+                selectedErrorType = 'missingLetter'; // Reset auf Standard
+                selectedErrorFrequency = 1; // Reset auf Standard
                 errorTypeRadios.forEach(radio => radio.checked = false);
+                document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true;
+                errorFrequencySlider.value = 1;
+                errorFrequencyValueSpan.textContent = 1;
             }
         });
 
@@ -216,6 +258,12 @@
                 selectedErrorType = event.target.value;
             });
         });
+
+        errorFrequencySlider.addEventListener('input', (event) => {
+            selectedErrorFrequency = parseInt(event.target.value, 10);
+            errorFrequencyValueSpan.textContent = selectedErrorFrequency;
+        });
+
 
         function showView(viewToShow) {
             document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -227,10 +275,15 @@
             currentSentenceIndex = 0;
             // Fehler-Modus UI und Zustand zurücksetzen, wenn ins Menü zurückgekehrt wird
             errorModeEnabled = false;
-            selectedErrorType = null;
+            selectedErrorType = 'missingLetter'; // Reset auf Standard
+            selectedErrorFrequency = 1; // Reset auf Standard
             errorModeToggle.checked = false;
             errorTypeSelection.style.display = 'none';
             errorTypeRadios.forEach(radio => radio.checked = false);
+            document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true; // Setze den Standard-Radio-Button
+            errorFrequencySlider.value = 1;
+            errorFrequencyValueSpan.textContent = 1;
+
             showView(startView);
         }
 
@@ -267,6 +320,7 @@
                 });
                 listSelectionContainer.appendChild(item);
             });
+            loadingIndicator.style.display = 'none'; // Lade-Anzeige ausblenden, wenn Listen geladen sind
         }
 
         // --- Spiellogik (mit Fehler-Modus Anpassung) ---
@@ -308,15 +362,15 @@
 
             // FEHLER GENERIERUNG HIER
             if (errorModeEnabled && selectedErrorType) {
-                const numWords = originalWords.length;
-                // Maximum 30% der Wörter, aber nicht mehr als 3 Fehler pro Satz
-                const maxErrors = Math.min(Math.ceil(numWords * 0.3), 3); 
-                // Mindestens 1 Fehler, maximal `maxErrors`
-                const numErrors = maxErrors > 0 ? (Math.floor(Math.random() * maxErrors) + 1) : 0; 
+                const numWordsInSentence = originalWords.length;
+                
+                // Bestimme die Anzahl der Fehler basierend auf dem Schieberegler, 
+                // begrenzt durch die Anzahl der Wörter im Satz.
+                const numErrorsToGenerate = Math.min(selectedErrorFrequency, numWordsInSentence); 
 
                 let errorIndices = new Set();
-                while (errorIndices.size < numErrors && errorIndices.size < numWords) {
-                    errorIndices.add(Math.floor(Math.random() * numWords));
+                while (errorIndices.size < numErrorsToGenerate) {
+                    errorIndices.add(Math.floor(Math.random() * numWordsInSentence));
                 }
                 
                 originalWords.forEach((word, idx) => {
@@ -324,7 +378,8 @@
                     if (errorIndices.has(idx)) {
                         const errorWord = generateError(word, selectedErrorType);
                         // Füge das fehlerhafte Wort NUR hinzu, wenn es sich vom Original unterscheidet
-                        if (errorWord !== word) {
+                        // und nicht leer ist.
+                        if (errorWord !== word && errorWord.length > 0) {
                             wordsForPool.push(errorWord);
                         }
                     }
@@ -442,7 +497,12 @@
                     
                     if (!replaced && word.length > 0) {
                         // Fallback: Wenn keine spezifische phonetische Substitution gefunden wird, versuche replacedLetter
-                        return generateError(word, 'replacedLetter');
+                        // Dies verhindert Endlosschleifen, wenn z.B. nur replacedLetter als Fallback aufgerufen wird.
+                        let tempWord = generateError(word, 'replacedLetter');
+                        if (tempWord !== word) { // Nur übernehmen, wenn es sich tatsächlich unterscheidet
+                            modifiedWord = tempWord;
+                            replaced = true;
+                        }
                     }
                     break;
                 case 'capitalization': // Groß- und Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)
@@ -458,13 +518,16 @@
             }
 
             // Sicherstellen, dass sich das Wort tatsächlich geändert hat, um triviale "Fehler" zu vermeiden
-            // und dass der Fehler nicht zu einem leeren String führt (außer bei missingLetter für 1-Buchstabe-Wörter)
-            if (modifiedWord === word || (modifiedWord === "" && errorType !== 'missingLetter')) {
-                 // Wenn der Fehler nicht funktioniert hat oder zu leerem String führte,
-                 // versuchen wir einen einfachen replacedLetter als Fallback,
-                 // es sei denn, der Fehler war bereits replacedLetter.
+            // und dass der Fehler nicht zu einem leeren String führt (außer bei missingLetter für 1-Buchstabe-Wörter).
+            // Wenn der Fehler nicht funktioniert hat oder zu leerem String führte,
+            // versuchen wir einen einfachen replacedLetter als Fallback,
+            // es sei denn, der Fehler war bereits replacedLetter.
+            if (modifiedWord === word || modifiedWord === "") {
                 if (word.length > 0 && errorType !== 'replacedLetter') {
-                     return generateError(word, 'replacedLetter');
+                     let fallbackWord = generateError(word, 'replacedLetter');
+                     if (fallbackWord !== word) { // Nur übernehmen, wenn der Fallback erfolgreich war
+                         return fallbackWord;
+                     }
                 }
                 return word; // Wenn auch Fallback nicht möglich, Originalwort zurückgeben
             }
