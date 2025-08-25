@@ -1,1 +1,16 @@
-
+{
+  "lists": [
+    {
+      "id": "a1",
+      "title": "Anfänger (A1)",
+      "description": "Sehr einfache Sätze mit 3 bis 5 Wörtern. Perfekt für den Einstieg.",
+      "file": "lists/a1_sentences.json"
+    },
+    {
+      "id": "b1",
+      "title": "Fortgeschrittene (B1)",
+      "description": "Längere Sätze mit komplexerem Satzbau.",
+      "file": "lists/b1_sentences.json"
+    }
+  ]
+}
