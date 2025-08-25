@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktiver Lese-Trainer</title>
+    <style>
+        /* Grundlegende Styles für ein sauberes Aussehen */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #app-container {
+            background-color: #ffffff;
+            padding: 25px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        /* Ansichten (Setup, Spiel, Ende) */
+        .view {
+            display: none; /* Standardmäßig alle Ansichten ausblenden */
+        }
+        .view.active {
+            display: block; /* Nur die aktive Ansicht zeigen */
+        }
+
+        /* Setup-Ansicht */
+        textarea {
+            width: 95%;
+            height: 150px;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Spiel-Ansicht */
+        #progress-indicator {
+            font-size: 0.9rem;
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        #current-reconstruction {
+            min-height: 50px;
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            color: #333;
+            font-weight: bold;
+            letter-spacing: 1px;
+            background-color: #fafafa;
+        }
+
+        #word-pool {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #feedback-message {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        #feedback-message.correct {
+            color: #28a745;
+        }
+        #feedback-message.incorrect {
+            color: #dc3545;
+        }
+
+        /* Buttons */
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+            color: #999;
+        }
+
+        .word-button {
+            background-color: #6c757d;
+        }
+        .word-button:hover:not(:disabled) {
+            background-color: #5a6268;
+        }
+        
+        #play-audio-button {
+            background-color: #17a2b8;
+            margin-right: 10px;
+        }
+        #play-audio-button:hover {
+            background-color: #138496;
+        }
+
+        #next-sentence-button {
+            background-color: #28a745;
+            display: none; /* Standardmäßig versteckt */
+        }
+        #next-sentence-button:hover {
+            background-color: #218838;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <h1>Interaktiver Lese-Trainer</h1>
+
+        <!-- 1. Setup-Ansicht: Sätze eingeben -->
+        <div id="setup-view" class="view active">
+            <h2>Schritt 1: Deine Sätze</h2>
+            <p>Gib hier die Sätze ein, die du üben möchtest. Ein Satz pro Zeile.</p>
+            <textarea id="sentence-input" placeholder="Die Katze schläft.
+Der Hund bellt laut.
+Die Sonne scheint heute hell."></textarea>
+            <button id="start-button">Spiel starten</button>
+        </div>
+
+        <!-- 2. Spiel-Ansicht: Sätze nachbauen -->
+        <div id="game-view" class="view">
+            <div id="progress-indicator">Satz 1 von 3</div>
+            <p>Höre gut zu und baue den Satz nach.</p>
+            
+            <div id="current-reconstruction">&nbsp;</div>
+            <div id="word-pool"></div>
+            
+            <div id="feedback-message"></div>
+            
+            <button id="play-audio-button">Satz vorlesen</button>
+            <button id="next-sentence-button">Nächster Satz</button>
+        </div>
+
+        <!-- 3. Finish-Ansicht: Spielende -->
+        <div id="finish-view" class="view">
+            <h2>Großartig!</h2>
+            <p>Du hast alle Sätze erfolgreich geübt.</p>
+            <button id="restart-button">Nochmal spielen</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM-Elemente abrufen
+        const setupView = document.getElementById('setup-view');
+        const gameView = document.getElementById('game-view');
+        const finishView = document.getElementById('finish-view');
+
+        const sentenceInput = document.getElementById('sentence-input');
+        const startButton = document.getElementById('start-button');
+        
+        const progressIndicator = document.getElementById('progress-indicator');
+        const currentReconstruction = document.getElementById('current-reconstruction');
+        const wordPool = document.getElementById('word-pool');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const playAudioButton = document.getElementById('play-audio-button');
+        const nextSentenceButton = document.getElementById('next-sentence-button');
+        
+        const restartButton = document.getElementById('restart-button');
+
+        // Spielzustand (globale Variablen)
+        let allSentences = [];
+        let currentSentenceIndex = 0;
+        let originalWords = [];
+        let reconstructedWords = [];
+
+        // Event Listener für die Buttons
+        startButton.addEventListener('click', startGame);
+        playAudioButton.addEventListener('click', playCurrentSentence);
+        nextSentenceButton.addEventListener('click', loadNextSentence);
+        restartButton.addEventListener('click', () => location.reload()); // Einfachste Art neuzustarten
+
+        // Funktion zum Starten des Spiels
+        function startGame() {
+            const inputText = sentenceInput.value.trim();
+            if (inputText === '') {
+                alert('Bitte gib mindestens einen Satz ein.');
+                return;
+            }
+            // Text in Sätze aufteilen und leere Zeilen filtern
+            allSentences = inputText.split('\n').filter(s => s.trim() !== '');
+            
+            if (allSentences.length === 0) {
+                alert('Keine gültigen Sätze gefunden.');
+                return;
+            }
+
+            currentSentenceIndex = 0;
+            // Ansichten wechseln
+            setupView.classList.remove('active');
+            gameView.classList.add('active');
+
+            loadSentence(currentSentenceIndex);
+        }
+
+        // Funktion, um einen Satz zu laden und anzuzeigen
+        function loadSentence(index) {
+            // Spielende erreicht?
+            if (index >= allSentences.length) {
+                showFinishScreen();
+                return;
+            }
+
+            // UI zurücksetzen
+            reconstructedWords = [];
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = '';
+            nextSentenceButton.style.display = 'none';
+            updateReconstructionDisplay();
+
+            progressIndicator.textContent = `Satz ${index + 1} von ${allSentences.length}`;
+            
+            const currentSentence = allSentences[index];
+            
+            // Satz in Wörter aufteilen (einfache Methode)
+            // Entfernt gängige Satzzeichen am Ende für saubere Wörter
+            originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
+            
+            // Wörter mischen für den Pool
+            const shuffledWords = [...originalWords].sort(() => Math.random() - 0.5);
+            displayWords(shuffledWords);
+            
+            // Satz direkt beim Laden vorlesen
+            playCurrentSentence();
+        }
+
+        // Funktion, die Wörter im Pool anzeigt
+        function displayWords(words) {
+            wordPool.innerHTML = ''; // Alten Pool leeren
+            words.forEach(word => {
+                const button = document.createElement('button');
+                button.textContent = word;
+                button.classList.add('word-button');
+                button.addEventListener('click', () => handleWordClick(word, button));
+                wordPool.appendChild(button);
+            });
+        }
+
+        // Funktion, die den Klick auf ein Wort verarbeitet
+        function handleWordClick(word, button) {
+            button.disabled = true;
+            reconstructedWords.push(word);
+            updateReconstructionDisplay();
+            checkSentence();
+        }
+
+        // Anzeige des nachgebauten Satzes aktualisieren
+        function updateReconstructionDisplay() {
+            if (reconstructedWords.length === 0) {
+                currentReconstruction.innerHTML = '&nbsp;'; // Platzhalter für leeren Zustand
+            } else {
+                currentReconstruction.textContent = reconstructedWords.join(' ');
+            }
+        }
+
+        // Überprüft, ob der nachgebaute Satz korrekt ist
+        function checkSentence() {
+            const reconstructed = reconstructedWords.join(' ');
+            const original = originalWords.slice(0, reconstructedWords.length).join(' ');
+
+            // Prüfen, ob der bisherige Teil korrekt ist
+            if (reconstructed !== original) {
+                // Fehler!
+                feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!';
+                feedbackMessage.className = 'incorrect';
+
+                // Kurze Pause, dann alles zurücksetzen
+                setTimeout(() => {
+                    reconstructedWords = [];
+                    updateReconstructionDisplay();
+                    feedbackMessage.textContent = '';
+                    // Alle Wort-Buttons wieder aktivieren
+                    document.querySelectorAll('.word-button').forEach(btn => btn.disabled = false);
+                }, 1500);
+            } 
+            // Prüfen, ob der Satz komplett und richtig ist
+            else if (reconstructedWords.length === originalWords.length) {
+                // Erfolg!
+                feedbackMessage.textContent = 'Super, das ist richtig!';
+                feedbackMessage.className = 'correct';
+                nextSentenceButton.style.display = 'inline-block';
+            }
+        }
+
+        // Funktion, um zum nächsten Satz zu gehen
+        function loadNextSentence() {
+            currentSentenceIndex++;
+            loadSentence(currentSentenceIndex);
+        }
+
+        // Funktion zum Anzeigen des End-Bildschirms
+        function showFinishScreen() {
+            gameView.classList.remove('active');
+            finishView.classList.add('active');
+        }
+
+        // Funktion, um einen Satz per Text-to-Speech vorzulesen
+        function playCurrentSentence() {
+            if ('speechSynthesis' in window && currentSentenceIndex < allSentences.length) {
+                const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]);
+                utterance.lang = 'de-DE'; // Wichtig für die korrekte Aussprache
+                utterance.rate = 0.9; // Etwas langsamer für besseres Verständnis
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Dein Browser unterstützt leider keine Sprachausgabe.');
+            }
+        }
+    </script>
+</body>
+</html>
