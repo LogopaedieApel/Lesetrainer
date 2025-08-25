@@ -11,6 +11,12 @@
       "title": "Fortgeschrittene (B1)",
       "description": "Längere Sätze mit komplexerem Satzbau.",
       "file": "lists/b1_sentences.json"
+    },
+    {
+      "id": "Klasse_2",
+      "title": "2. Klasse",
+      "description": "100 Wörter für 2. Klasse.",
+      "file": "lists/Klasse_2.json"
     }
   ]
 }
