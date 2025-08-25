@@ -4,8 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interaktiver Lese-Trainer</title>
+    <!-- Lexend Font von Google Fonts hinzufügen -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        body { 
+            /* Lexend als primäre Schriftart festlegen */
+            font-family: 'Lexend', sans-serif; 
+            background-color: #f0f2f5; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px; 
+            box-sizing: border-box; 
+        }
         #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; }
         h1, h2 { color: #333; }
         .view { display: none; }
@@ -85,17 +98,18 @@
             border-radius: 50%;
         }
         #error-type-selection label {
-            display: flex;
+            display: flex; /* Für bessere Ausrichtung von Checkbox und Text */
             align-items: center;
-            gap: 8px; /* Space between radio and text */
+            gap: 8px; /* Abstand zwischen Checkbox und Text */
             margin-bottom: 5px;
             font-size: 0.95rem;
             color: #444;
         }
-        #error-type-selection input[type="radio"] {
+        #error-type-selection input[type="checkbox"] { /* Geändert von radio zu checkbox */
             margin: 0; /* Remove default margin for better alignment */
+            transform: scale(1.2); /* Checkbox etwas größer machen */
         }
-        /* NEUER CSS FÜR DEN SLIDER */
+        /* CSS FÜR DEN SLIDER */
         #error-frequency-container {
             margin-top: 20px;
             padding-top: 15px;
@@ -128,7 +142,7 @@
                 <p id="loading-indicator">Lade Listen...</p>
             </div>
 
-            <!-- NEUER BEREICH FÜR ZUFÄLLIGE REIHENFOLGE -->
+            <!-- BEREICH FÜR ZUFÄLLIGE REIHENFOLGE -->
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left;">
                 <h3>Zufällige Reihenfolge</h3>
                 <label class="switch">
@@ -142,7 +156,7 @@
             </div>
             <!-- ENDE ZUFÄLLIGE REIHENFOLGE -->
 
-            <!-- NEUER BEREICH FÜR FEHLER-MODUS -->
+            <!-- BEREICH FÜR FEHLER-MODUS -->
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left;">
                 <h3>Fehler-Modus (Optional)</h3>
                 <label class="switch">
@@ -152,17 +166,18 @@
                 <label for="error-mode-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Fehler aktivieren</label>
 
                 <div id="error-type-selection" style="display: none; margin-top: 15px;">
-                    <h4>Fehlerart auswählen:</h4>
+                    <h4>Fehlerart(en) auswählen:</h4>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label><input type="radio" name="errorType" value="missingLetter" checked> Buchstabe fehlt (z. B. Tisch → Tsch)</label>
-                        <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht (z. B. Maus → Muas)</label>
-                        <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe ersetzt (z. B. Ball → Balt)</label>
-                        <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)</label>
-                        <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)</label>
-                        <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)</label>
+                        <!-- Hier wurden die input type="radio" zu type="checkbox" geändert -->
+                        <label><input type="checkbox" name="errorType" value="missingLetter"> Buchstabe fehlt (z. B. Tisch → Tsch)</label>
+                        <label><input type="checkbox" name="errorType" value="swappedLetters"> Buchstaben vertauscht (z. B. Maus → Muas)</label>
+                        <label><input type="checkbox" name="errorType" value="replacedLetter"> Falscher Buchstabe ersetzt (z. B. Ball → Balt)</label>
+                        <label><input type="checkbox" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)</label>
+                        <label><input type="checkbox" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)</label>
+                        <label><input type="checkbox" name="errorType" value="capitalization"> Groß-/Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)</label>
                     </div>
 
-                    <!-- NEUER BEREICH FÜR FEHLER-HÄUFIGKEIT -->
+                    <!-- BEREICH FÜR FEHLER-HÄUFIGKEIT -->
                     <div id="error-frequency-container">
                         <h4>Fehlerhäufigkeit pro Satz:</h4>
                         <input type="range" id="error-frequency-slider" min="1" max="5" value="1">
@@ -221,7 +236,8 @@
         // NEUE DOM-ELEMENTE FÜR FEHLER-MODUS
         const errorModeToggle = document.getElementById('error-mode-toggle');
         const errorTypeSelection = document.getElementById('error-type-selection');
-        const errorTypeRadios = document.querySelectorAll('input[name="errorType"]');
+        // Jetzt ein QuerySelectorAll, da es mehrere Checkboxes sind
+        const errorTypeCheckboxes = document.querySelectorAll('input[name="errorType"]'); 
         const errorFrequencySlider = document.getElementById('error-frequency-slider');
         const errorFrequencyValueSpan = document.getElementById('error-frequency-value');
         
@@ -237,7 +253,8 @@
 
         // NEUE SPIELZUSTÄNDE FÜR FEHLER-MODUS
         let errorModeEnabled = false;
-        let selectedErrorType = 'missingLetter'; // Standardwert beim Start
+        // Speichert jetzt ein Array von ausgewählten Fehlertypen
+        let selectedErrorTypes = []; 
         let selectedErrorFrequency = 1; // Standardwert für Fehlerhäufigkeit (1-5)
 
 
@@ -248,8 +265,7 @@
             loadMasterList();
             // Initialen Wert für den Slider anzeigen
             errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
-            // Sicherstellen, dass der erste Radio-Button standardmäßig ausgewählt ist
-            document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true;
+            // Keine Standardauswahl für Checkboxen
         });
 
         backToMenuGameBtn.addEventListener('click', showStartView);
@@ -269,18 +285,21 @@
             errorTypeSelection.style.display = errorModeEnabled ? 'block' : 'none';
             // Wenn der Fehler-Modus deaktiviert wird, Zustand zurücksetzen
             if (!errorModeEnabled) {
-                selectedErrorType = 'missingLetter'; // Reset auf Standard
+                selectedErrorTypes = []; // Array leeren
+                errorTypeCheckboxes.forEach(checkbox => checkbox.checked = false); // Alle Checkboxes deaktivieren
                 selectedErrorFrequency = 1; // Reset auf Standard
-                errorTypeRadios.forEach(radio => radio.checked = false);
-                document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true;
                 errorFrequencySlider.value = 1;
                 errorFrequencyValueSpan.textContent = 1;
             }
         });
 
-        errorTypeRadios.forEach(radio => {
-            radio.addEventListener('change', (event) => {
-                selectedErrorType = event.target.value;
+        // Event Listener für jede Fehlerart-Checkbox
+        errorTypeCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                // Aktualisiere das Array der ausgewählten Fehlertypen
+                selectedErrorTypes = Array.from(errorTypeCheckboxes)
+                                        .filter(cb => cb.checked)
+                                        .map(cb => cb.value);
             });
         });
 
@@ -305,12 +324,11 @@
 
             // Fehler-Modus UI und Zustand zurücksetzen, wenn ins Menü zurückgekehrt wird
             errorModeEnabled = false;
-            selectedErrorType = 'missingLetter'; // Reset auf Standard
-            selectedErrorFrequency = 1; // Reset auf Standard
+            selectedErrorTypes = []; // Array leeren
             errorModeToggle.checked = false;
             errorTypeSelection.style.display = 'none';
-            errorTypeRadios.forEach(radio => radio.checked = false);
-            document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true; // Setze den Standard-Radio-Button
+            errorTypeCheckboxes.forEach(checkbox => checkbox.checked = false); // Alle Checkboxes deaktivieren
+            selectedErrorFrequency = 1; // Reset auf Standard
             errorFrequencySlider.value = 1;
             errorFrequencyValueSpan.textContent = 1;
 
@@ -370,8 +388,9 @@
                 return;
             }
             // Prüfen, ob Fehler-Modus aktiviert ist, aber keine Fehlerart ausgewählt wurde
-            if (errorModeEnabled && !selectedErrorType) {
-                alert('Bitte wählen Sie eine Fehlerart aus, um den Fehler-Modus zu starten.');
+            // selectedErrorTypes ist jetzt ein Array
+            if (errorModeEnabled && selectedErrorTypes.length === 0) { 
+                alert('Bitte wählen Sie mindestens eine Fehlerart aus, um den Fehler-Modus zu starten.');
                 return;
             }
 
@@ -406,7 +425,8 @@
             let wordsForPool = []; // Dieser Array wird die Wörter für den Pool enthalten
 
             // FEHLER GENERIERUNG HIER
-            if (errorModeEnabled && selectedErrorType) {
+            // Jetzt prüfen, ob Fehler-Modus aktiv UND ob Fehlertypen ausgewählt sind
+            if (errorModeEnabled && selectedErrorTypes.length > 0) {
                 const numWordsInSentence = originalWords.length;
                 
                 // Bestimme die Anzahl der Fehler basierend auf dem Schieberegler, 
@@ -421,7 +441,10 @@
                 originalWords.forEach((word, idx) => {
                     wordsForPool.push(word); // Füge IMMER das korrekte Wort hinzu
                     if (errorIndices.has(idx)) {
-                        const errorWord = generateError(word, selectedErrorType);
+                        // NEU: Wähle ZUFÄLLIG einen der aktivierten Fehlertypen aus
+                        const randomErrorType = selectedErrorTypes[Math.floor(Math.random() * selectedErrorTypes.length)];
+                        const errorWord = generateError(word, randomErrorType);
+                        
                         // Füge das fehlerhafte Wort NUR hinzu, wenn es sich vom Original unterscheidet
                         // und nicht leer ist.
                         if (errorWord !== word && errorWord.length > 0) {
@@ -430,7 +453,7 @@
                     }
                 });
             } else {
-                // Wenn kein Fehler-Modus, einfach alle originalen Wörter in den Pool legen
+                // Wenn kein Fehler-Modus oder keine Fehlerart ausgewählt, einfach alle originalen Wörter in den Pool legen
                 wordsForPool = [...originalWords];
             }
 
@@ -439,7 +462,7 @@
             playCurrentSentence();
         }
         
-        // HILFSFUNKTION FÜR FEHLERGENERIERUNG
+        // HILFSFUNKTION FÜR FEHLERGENERIERUNG (unverändert in ihrer Funktionsweise, nur der Aufruf ist anders)
         function generateError(word, errorType) {
             // Für sehr kurze Wörter (<2 Zeichen), überspringen wir bestimmte Fehlertypen,
             // da sie sonst zu leeren oder bedeutungslosen Wörtern führen könnten.
