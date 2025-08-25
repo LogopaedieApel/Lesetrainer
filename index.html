@@ -304,11 +304,11 @@
             // originalWords enthält immer die korrekten Wörter für den Vergleich
             originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
 
-            let wordsToDisplayInPool = [...originalWords]; // Start mit den korrekten Wörtern
+            let wordsForPool = []; // Dieser Array wird die Wörter für den Pool enthalten
 
             // FEHLER GENERIERUNG HIER
             if (errorModeEnabled && selectedErrorType) {
-                const numWords = wordsToDisplayInPool.length;
+                const numWords = originalWords.length;
                 // Maximum 30% der Wörter, aber nicht mehr als 3 Fehler pro Satz
                 const maxErrors = Math.min(Math.ceil(numWords * 0.3), 3); 
                 // Mindestens 1 Fehler, maximal `maxErrors`
@@ -319,15 +319,22 @@
                     errorIndices.add(Math.floor(Math.random() * numWords));
                 }
                 
-                wordsToDisplayInPool = wordsToDisplayInPool.map((word, idx) => {
+                originalWords.forEach((word, idx) => {
+                    wordsForPool.push(word); // Füge IMMER das korrekte Wort hinzu
                     if (errorIndices.has(idx)) {
-                        return generateError(word, selectedErrorType);
+                        const errorWord = generateError(word, selectedErrorType);
+                        // Füge das fehlerhafte Wort NUR hinzu, wenn es sich vom Original unterscheidet
+                        if (errorWord !== word) {
+                            wordsForPool.push(errorWord);
+                        }
                     }
-                    return word;
                 });
+            } else {
+                // Wenn kein Fehler-Modus, einfach alle originalen Wörter in den Pool legen
+                wordsForPool = [...originalWords];
             }
 
-            const shuffledWords = [...wordsToDisplayInPool].sort(() => Math.random() - 0.5);
+            const shuffledWords = [...wordsForPool].sort(() => Math.random() - 0.5);
             displayWords(shuffledWords);
             playCurrentSentence();
         }
@@ -337,6 +344,8 @@
             // Für sehr kurze Wörter (<2 Zeichen), überspringen wir bestimmte Fehlertypen,
             // da sie sonst zu leeren oder bedeutungslosen Wörtern führen könnten.
             // Groß-/Kleinschreibung kann auch bei einem Zeichen angewendet werden.
+            // Bei Wörtern mit nur einem Buchstaben kann 'missingLetter' oder 'swappedLetters' nicht sinnvoll angewendet werden.
+            // 'duplicatedLetters' oder 'replacedLetter' können funktionieren.
             if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {
                 return word;
             }
@@ -346,6 +355,7 @@
 
             // Hilfsfunktion, um die Groß-/Kleinschreibung des ursprünglichen Zeichens beizubehalten
             const preserveCase = (originalChar, newChar) => {
+                if (!originalChar) return newChar; // Falls originalChar leer ist (z.B. nach Entfernen)
                 if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) {
                     return newChar.toUpperCase();
                 }
@@ -397,28 +407,42 @@
                         'g': ['k'], 'k': ['g'],
                         'f': ['v'], 'v': ['f'],
                         's': ['z'], 'z': ['s'],
-                        // Weitere gängige deutsche phonetische Verwechslungen (einzelne Zeichen) könnten hier hinzugefügt werden
+                        'eu': ['äu'], 'äu': ['eu'], // Beispiel für Diphthong
+                        'ei': ['ai'], 'ai': ['ei'],
+                        'sch': ['ch'], 'ch': ['sch'] // Beispiel für Mehrfachbuchstaben
                     };
 
                     let replaced = false;
-                    for (let i = 0; i < chars.length; i++) {
-                        const charLower = chars[i].toLowerCase();
-                        if (phoneticSubstitutions[charLower]) {
-                            const subs = phoneticSubstitutions[charLower];
-                            const newChar = subs[Math.floor(Math.random() * subs.length)];
-                            chars[i] = preserveCase(chars[i], newChar);
+                    // Versuche zuerst, Mehrfachbuchstaben zu ersetzen
+                    const multiCharSubKeys = Object.keys(phoneticSubstitutions).filter(k => k.length > 1).sort((a, b) => b.length - a.length); // Längere zuerst
+                    for (const subKey of multiCharSubKeys) {
+                        const idx = word.toLowerCase().indexOf(subKey);
+                        if (idx !== -1) {
+                            const subs = phoneticSubstitutions[subKey];
+                            const newSub = subs[Math.floor(Math.random() * subs.length)];
+                            modifiedWord = word.substring(0, idx) + preserveCase(word.substring(idx, idx + subKey.length), newSub) + word.substring(idx + subKey.length);
                             replaced = true;
-                            break; // Nur ein Zeichen pro Wort ersetzen für Einfachheit
+                            break;
                         }
                     }
-                    if (replaced) {
-                        modifiedWord = chars.join('');
-                    } else {
-                        // Fallback: Wenn keine spezifische phonetische Substitution gefunden wird, versuche replacedLetter
-                        // Dies stellt sicher, dass ein Fehler eingeführt wird, falls möglich
-                        if (word.length > 0) {
-                             return generateError(word, 'replacedLetter');
+
+                    if (!replaced) { // Wenn keine Mehrfachbuchstaben ersetzt wurden, versuche einzelne
+                        for (let i = 0; i < chars.length; i++) {
+                            const charLower = chars[i].toLowerCase();
+                            if (phoneticSubstitutions[charLower]) {
+                                const subs = phoneticSubstitutions[charLower];
+                                const newChar = subs[Math.floor(Math.random() * subs.length)];
+                                chars[i] = preserveCase(chars[i], newChar);
+                                replaced = true;
+                                break; 
+                            }
                         }
+                        if (replaced) modifiedWord = chars.join('');
+                    }
+                    
+                    if (!replaced && word.length > 0) {
+                        // Fallback: Wenn keine spezifische phonetische Substitution gefunden wird, versuche replacedLetter
+                        return generateError(word, 'replacedLetter');
                     }
                     break;
                 case 'capitalization': // Groß- und Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)
@@ -434,7 +458,17 @@
             }
 
             // Sicherstellen, dass sich das Wort tatsächlich geändert hat, um triviale "Fehler" zu vermeiden
-            return modifiedWord === word ? word : modifiedWord;
+            // und dass der Fehler nicht zu einem leeren String führt (außer bei missingLetter für 1-Buchstabe-Wörter)
+            if (modifiedWord === word || (modifiedWord === "" && errorType !== 'missingLetter')) {
+                 // Wenn der Fehler nicht funktioniert hat oder zu leerem String führte,
+                 // versuchen wir einen einfachen replacedLetter als Fallback,
+                 // es sei denn, der Fehler war bereits replacedLetter.
+                if (word.length > 0 && errorType !== 'replacedLetter') {
+                     return generateError(word, 'replacedLetter');
+                }
+                return word; // Wenn auch Fallback nicht möglich, Originalwort zurückgeben
+            }
+            return modifiedWord;
         }
 
 
