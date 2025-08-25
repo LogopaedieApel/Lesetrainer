@@ -237,7 +237,7 @@
         let germanVoice = null;
 
         // NEUE SPIELZUSTÄNDE FÜR ZUFÄLLIGE REIHENFOLGE
-        let randomOrderEnabled = false;
+        let randomOrderEnabled = true;
 
         // NEUE SPIELZUSTÄNDE FÜR FEHLER-MODUS
         let errorModeEnabled = false;
@@ -304,8 +304,8 @@
             currentSentenceIndex = 0;
             
             // Zufällige Reihenfolge UI und Zustand zurücksetzen
-            randomOrderEnabled = false;
-            randomOrderToggle.checked = false;
+            randomOrderEnabled = true;
+            randomOrderToggle.checked = true;
 
             // Fehler-Modus UI und Zustand zurücksetzen, wenn ins Menü zurückgekehrt wird
             errorModeEnabled = false;
