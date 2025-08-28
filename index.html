@@ -255,7 +255,7 @@
 <script>
     // ========= DOM-Elemente =========
     const appContainer = document.getElementById('app-container');
-    const mainTitle = document.querySelector('#app-container > h1'); // <-- ÄNDERUNG 1: H1-Element referenzieren
+    const mainTitle = document.querySelector('#app-container > h1');
     const startView = document.getElementById('start-view');
     const gameView = document.getElementById('game-view');
     const finishView = document.getElementById('finish-view');
@@ -280,7 +280,7 @@
     let germanVoice = null;
 
     // Einstellungen
-    let gameMode = 'single'; // 'single' oder 'two-player'
+    let gameMode = 'single';
     let totalRounds = 5;
     let randomOrderEnabled = true;
     let errorModeEnabled = false;
@@ -295,7 +295,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadMasterList();
         setupEventListeners();
-        // Initialen Wert für den Slider anzeigen
         errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
     });
 
@@ -319,14 +318,12 @@
     function showView(viewToShow) {
         document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
         viewToShow.classList.add('active');
-
-        // <-- ÄNDERUNG 2: Titel nur auf der Startseite anzeigen
         mainTitle.style.display = (viewToShow.id === 'start-view') ? 'block' : 'none';
     }
 
     function showStartView() {
+        document.body.classList.remove('fullscreen-mode'); // KORREKTUR
         appContainer.classList.remove('two-player-mode');
-        // Alle UI-Elemente und Zustände zurücksetzen
         gameMode = 'single';
         document.querySelector('input[name="gameMode"][value="single"]').checked = true;
         roundsContainer.style.display = 'none';
@@ -335,7 +332,6 @@
         errorModeToggle.checked = false;
         errorModeEnabled = false;
         errorTypeSelection.style.display = 'none';
-        
         allSentences = [];
         currentSentenceIndex = 0;
         showView(startView);
@@ -354,7 +350,7 @@
     }
 
     function populateListSelection(lists) {
-        listSelectionContainer.innerHTML = ''; // Vorherigen Inhalt löschen
+        listSelectionContainer.innerHTML = '';
         lists.forEach(list => {
             const item = document.createElement('div');
             item.className = 'list-item';
@@ -380,19 +376,20 @@
             alert('Diese Liste enthält keine Sätze.');
             return;
         }
-
         allSentences = randomOrderEnabled ? shuffleArray([...sentences]) : sentences;
         currentSentenceIndex = 0;
 
         if (gameMode === 'single') {
+            document.body.classList.remove('fullscreen-mode'); // KORREKTUR
             startSinglePlayerGame();
         } else {
+            document.body.classList.add('fullscreen-mode'); // KORREKTUR
             totalRounds = Math.min(parseInt(roundsInput.value, 10), allSentences.length);
             if (totalRounds < 1) {
                 alert("Bitte eine gültige Rundenanzahl eingeben.");
                 return;
             }
-            allSentences = allSentences.slice(0, totalRounds); // Sätze auf Rundenanzahl kürzen
+            allSentences = allSentences.slice(0, totalRounds);
             startTwoPlayerGame();
         }
     }
@@ -413,7 +410,6 @@
                 <button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button>
             </div>`;
         
-        // Event-Listener für die neu erstellten Knöpfe
         document.getElementById('play-audio-button').addEventListener('click', playCurrentSentence);
         document.getElementById('next-sentence-button').addEventListener('click', loadNextSinglePlayerSentence);
         document.getElementById('back-to-menu-button-game').addEventListener('click', showStartView);
@@ -422,43 +418,37 @@
         loadSinglePlayerSentence(0);
     }
 
+    // ... (alle Funktionen für den Einzelspieler-Modus bleiben unverändert) ...
     function loadSinglePlayerSentence(index) {
         if (index >= allSentences.length) {
             showSinglePlayerFinishView();
             return;
         }
-
         const currentReconstruction = document.getElementById('current-reconstruction');
         const feedbackMessage = document.getElementById('feedback-message');
         const nextSentenceButton = document.getElementById('next-sentence-button');
-
         reconstructedWords = [];
         feedbackMessage.textContent = '';
         feedbackMessage.className = '';
         nextSentenceButton.style.display = 'none';
         currentReconstruction.textContent = '\u00A0';
         document.getElementById('progress-indicator').textContent = `Satz ${index + 1} von ${allSentences.length}`;
-
         const currentSentence = allSentences[index];
         originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
-
         let wordsForPool = generateWordPool(originalWords);
         displayWords(shuffleArray(wordsForPool), document.getElementById('word-pool'));
         playCurrentSentence();
     }
-
     function handleSinglePlayerWordClick(word, button) {
         button.disabled = true;
         reconstructedWords.push(word);
         document.getElementById('current-reconstruction').textContent = reconstructedWords.join(' ');
         checkSinglePlayerSentence();
     }
-    
     function checkSinglePlayerSentence() {
         const feedbackMessage = document.getElementById('feedback-message');
         const reconstructed = reconstructedWords.join(' ');
         const original = originalWords.slice(0, reconstructedWords.length).join(' ');
-
         if (reconstructed !== original) {
             feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!';
             feedbackMessage.className = 'incorrect';
@@ -474,12 +464,10 @@
             document.getElementById('next-sentence-button').style.display = 'inline-block';
         }
     }
-
     function loadNextSinglePlayerSentence() {
         currentSentenceIndex++;
         loadSinglePlayerSentence(currentSentenceIndex);
     }
-
     function showSinglePlayerFinishView() {
         finishView.innerHTML = `
             <h2>Großartig!</h2>
@@ -493,11 +481,10 @@
     }
 
     // ========= Zwei-Spieler-Modus =========
-        function startTwoPlayerGame() {
+    function startTwoPlayerGame() {
         appContainer.classList.add('two-player-mode');
         gameView.innerHTML = `
             <div id="two-player-container">
-                <!-- Spieler 2 (oben) -->
                 <div id="player2-area" class="player-area">
                      <div class="player-header">
                         <h2>Spieler 2</h2>
@@ -506,18 +493,15 @@
                     <div id="p2-progress" class="progress-indicator"></div>
                     <div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div>
                     <div id="p2-word-pool" class="word-pool"></div>
-                    <!-- NEU: Button für Spieler 2 -->
                     <button id="p2-play-audio-button" class="play-audio-button-player">Satz vorlesen</button>
                     <div id="p2-feedback" class="feedback-message"></div>
                 </div>
 
-                <!-- NEU: Zentrale Steuerleiste -->
                 <div id="central-controls">
                     <button id="next-sentence-button" style="display:none;">Nächster Satz</button>
                     <button id="end-game-button" class="menu-button">Spiel beenden</button>
                 </div>
 
-                <!-- Spieler 1 (unten) -->
                 <div id="player1-area" class="player-area">
                     <div class="player-header">
                         <h2>Spieler 1</h2>
@@ -526,17 +510,33 @@
                     <div id="p1-progress" class="progress-indicator"></div>
                     <div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div>
                     <div id="p1-word-pool" class="word-pool"></div>
-                    <!-- NEU: Button für Spieler 1 -->
                     <button id="p1-play-audio-button" class="play-audio-button-player">Satz vorlesen</button>
                     <div id="p1-feedback" class="feedback-message"></div>
                 </div>
             </div>`;
         
-        // Spieler-Objekte initialisieren (bleibt gleich)
-        player1 = { /* ... */ };
-        player2 = { /* ... */ };
+        // KORREKTUR: Spieler-Objekte vollständig initialisieren
+        player1 = {
+            id: 1,
+            score: 0,
+            reconstructedWords: [],
+            scoreEl: document.getElementById('p1-score'),
+            progressEl: document.getElementById('p1-progress'),
+            reconstructionEl: document.getElementById('p1-reconstruction'),
+            wordPoolEl: document.getElementById('p1-word-pool'),
+            feedbackEl: document.getElementById('p1-feedback')
+        };
+        player2 = {
+            id: 2,
+            score: 0,
+            reconstructedWords: [],
+            scoreEl: document.getElementById('p2-score'),
+            progressEl: document.getElementById('p2-progress'),
+            reconstructionEl: document.getElementById('p2-reconstruction'),
+            wordPoolEl: document.getElementById('p2-word-pool'),
+            feedbackEl: document.getElementById('p2-feedback')
+        };
         
-        // Event-Listener anpassen
         document.getElementById('p1-play-audio-button').addEventListener('click', playCurrentSentence);
         document.getElementById('p2-play-audio-button').addEventListener('click', playCurrentSentence);
         document.getElementById('next-sentence-button').addEventListener('click', loadNextTwoPlayerSentence);
@@ -546,47 +546,38 @@
         loadTwoPlayerSentence(0);
     }
     
+    // ... (restliche Zwei-Spieler-Funktionen und Hilfsfunktionen bleiben unverändert) ...
     function loadTwoPlayerSentence(index) {
         if (index >= allSentences.length) {
             showTwoPlayerFinishView();
             return;
         }
-        
         roundOver = false;
         document.getElementById('next-sentence-button').style.display = 'none';
-
         [player1, player2].forEach(p => {
             p.reconstructedWords = [];
             p.reconstructionEl.textContent = '\u00A0';
             p.feedbackEl.textContent = '';
             p.progressEl.textContent = `Satz ${index + 1} von ${allSentences.length}`;
         });
-        
         const currentSentence = allSentences[index];
         originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
-        
         const wordsForPool = generateWordPool(originalWords);
         const shuffledWords = shuffleArray(wordsForPool);
-
         displayWords(shuffledWords, player1.wordPoolEl, player1);
         displayWords(shuffledWords, player2.wordPoolEl, player2);
-
         playCurrentSentence();
     }
-
     function handleTwoPlayerWordClick(word, button, player) {
         if (roundOver) return;
-        
         button.disabled = true;
         player.reconstructedWords.push(word);
         player.reconstructionEl.textContent = player.reconstructedWords.join(' ');
         checkTwoPlayerSentence(player);
     }
-
     function checkTwoPlayerSentence(player) {
         const reconstructed = player.reconstructedWords.join(' ');
         const original = originalWords.slice(0, player.reconstructedWords.length).join(' ');
-
         if (reconstructed !== original) {
             player.feedbackEl.textContent = 'Falsch!';
             player.feedbackEl.className = 'feedback-message incorrect';
@@ -594,23 +585,17 @@
                 player.reconstructedWords = [];
                 player.reconstructionEl.textContent = '\u00A0';
                 player.feedbackEl.textContent = '';
-                // Nur die Buttons dieses Spielers wieder aktivieren
                 player.wordPoolEl.querySelectorAll('.word-button').forEach(btn => btn.disabled = false);
             }, 1000);
         } else if (player.reconstructedWords.length === originalWords.length) {
-            // Dieser Spieler hat die Runde gewonnen!
             roundOver = true;
             const winner = player;
             const loser = (player.id === 1) ? player2 : player1;
-            
-            // Punkte für Gewinner
             const roundPoints = originalWords.length;
             winner.score += roundPoints;
             winner.scoreEl.textContent = `Punkte: ${winner.score}`;
             winner.feedbackEl.textContent = `Runde gewonnen! +${roundPoints} Punkte`;
             winner.feedbackEl.className = 'feedback-message correct';
-
-            // Punkte für Verlierer berechnen
             let loserPoints = 0;
             for (let i = 0; i < loser.reconstructedWords.length; i++) {
                 if (loser.reconstructedWords[i] === originalWords[i]) {
@@ -621,18 +606,14 @@
             loser.scoreEl.textContent = `Punkte: ${loser.score}`;
             loser.feedbackEl.textContent = `+${loserPoints} Punkte für richtige Wörter`;
             loser.feedbackEl.className = 'feedback-message';
-
-            // Alle Wort-Buttons deaktivieren
             document.querySelectorAll('.word-button').forEach(btn => btn.disabled = true);
             document.getElementById('next-sentence-button').style.display = 'inline-block';
         }
     }
-    
     function loadNextTwoPlayerSentence() {
         currentSentenceIndex++;
         loadTwoPlayerSentence(currentSentenceIndex);
     }
-
     function showTwoPlayerFinishView() {
         let winnerText = '';
         if (player1.score > player2.score) {
@@ -642,7 +623,6 @@
         } else {
             winnerText = 'Unentschieden!';
         }
-
         finishView.innerHTML = `
             <h2>Spiel beendet!</h2>
             <h3>${winnerText}</h3>
@@ -653,9 +633,6 @@
         document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
         showView(finishView);
     }
-
-
-    // ========= Geteilte Hilfsfunktionen =========
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -663,8 +640,6 @@
         }
         return array;
     }
-
-    // Angepasst, um ein Ziel-Element und ggf. einen Spieler zu akzeptieren
     function displayWords(words, targetElement, player = null) {
         targetElement.innerHTML = '';
         words.forEach(word => {
@@ -681,7 +656,6 @@
             targetElement.appendChild(button);
         });
     }
-
     function generateWordPool(correctWords) {
         let pool = [...correctWords];
         if (errorModeEnabled) {
@@ -700,8 +674,7 @@
         }
         return pool;
     }
-
-    function generateError(word, errorType) { /* ... Deine existierende generateError Funktion ... */ 
+    function generateError(word, errorType) { 
         if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {return word;}
         let modifiedWord = word; let chars = word.split('');
         const preserveCase = (originalChar, newChar) => {if (!originalChar) return newChar; if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) { return newChar.toUpperCase(); } return newChar.toLowerCase(); };
@@ -715,8 +688,6 @@
         }
         if (modifiedWord === word || modifiedWord === "") { if (word.length > 0 && errorType !== 'replacedLetter') { let fallbackWord = generateError(word, 'replacedLetter'); if (fallbackWord !== word) { return fallbackWord; } } return word; } return modifiedWord;
     }
-
-    // ========= Sprachausgabe =========
     window.speechSynthesis.onvoiceschanged = () => {
         germanVoice = window.speechSynthesis.getVoices().find(v => v.lang === 'de-DE');
     };
@@ -729,21 +700,6 @@
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         }
-    }
-</script>
-
-<!-- ============= PWA-ERGÄNZUNG: SERVICE WORKER REGISTRIERUNG ============= -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('Service Worker registriert:', registration);
-                })
-                .catch(error => {
-                    console.log('Service Worker Registrierung fehlgeschlagen:', error);
-                });
-        });
     }
 </script>
 
