@@ -468,13 +468,27 @@
             const button = document.createElement('button');
             button.textContent = word;
             button.classList.add('word-button');
-            button.addEventListener('click', () => {
+
+            // Dies ist die Handler-Funktion, die wir aufrufen wollen
+            const handleInteraction = (event) => {
+                // Verhindert, dass der Browser scrollt oder ein `click`-Event nach dem `touch` auslöst
+                event.preventDefault(); 
+                
                 if (gameMode === 'single') {
                     handleSinglePlayerWordClick(word, button);
                 } else {
+                    // Stellt sicher, dass die Funktion nicht auf einem bereits deaktivierten Button erneut ausgeführt wird
+                    if (button.disabled) return; 
                     handleTwoPlayerWordClick(word, button, player);
                 }
-            });
+            };
+
+            // Füge den Listener für Touch-Geräte hinzu
+            button.addEventListener('touchstart', handleInteraction);
+            
+            // Füge den Listener für Desktop-Geräte (Maus) hinzu
+            button.addEventListener('click', handleInteraction);
+
             targetElement.appendChild(button);
         });
     }
