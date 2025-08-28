@@ -59,11 +59,6 @@
             /* Der Schlüssel für die gegenüberliegende Ansicht */
             transform: rotate(180deg);
         }
-
-        /* NEU: Dreht die Inhalte im Spieler-2-Bereich zurück, damit sie lesbar sind. */
-        #player2-area > div {
-            transform: rotate(180deg);
-        }
         .player-area h2 { margin-top: 0; }
         .player-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; }
         .score { font-size: 1.2rem; }
@@ -430,18 +425,7 @@
         appContainer.classList.add('two-player-mode');
         gameView.innerHTML = `
             <div id="two-player-container">
-                <!-- Spieler 1 -->
-                <div id="player1-area" class="player-area">
-                    <div class="player-header">
-                        <h2>Spieler 1</h2>
-                        <div id="p1-score" class="score">Punkte: 0</div>
-                    </div>
-                    <div id="p1-progress" class="progress-indicator"></div>
-                    <div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div>
-                    <div id="p1-word-pool" class="word-pool"></div>
-                    <div id="p1-feedback" class="feedback-message"></div>
-                </div>
-                <!-- Spieler 2 -->
+                <!-- HIER DIE ÄNDERUNG: Spieler 2 ist jetzt oben -->
                 <div id="player2-area" class="player-area">
                      <div class="player-header">
                         <h2>Spieler 2</h2>
@@ -451,6 +435,17 @@
                     <div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div>
                     <div id="p2-word-pool" class="word-pool"></div>
                     <div id="p2-feedback" class="feedback-message"></div>
+                </div>
+                <!-- Spieler 1 ist jetzt unten -->
+                <div id="player1-area" class="player-area">
+                    <div class="player-header">
+                        <h2>Spieler 1</h2>
+                        <div id="p1-score" class="score">Punkte: 0</div>
+                    </div>
+                    <div id="p1-progress" class="progress-indicator"></div>
+                    <div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div>
+                    <div id="p1-word-pool" class="word-pool"></div>
+                    <div id="p1-feedback" class="feedback-message"></div>
                 </div>
             </div>
             <div id="two-player-controls">
@@ -657,7 +652,7 @@
             case 'phoneticallySimilar': const subs = {'b':'p','p':'b','d':'t','t':'d','g':'k','k':'g','f':'v','v':'f','s':'z','z':'s'}; let replaced = false; for (let i=0; i<chars.length; i++) { const charLower = chars[i].toLowerCase(); if (subs[charLower]) { chars[i] = preserveCase(chars[i], subs[charLower]); replaced=true; break; } } if(replaced) modifiedWord = chars.join(''); else modifiedWord = generateError(word, 'replacedLetter'); break;
             case 'capitalization': if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { if (chars[0] === chars[0].toUpperCase()) { chars[0] = chars[0].toLowerCase(); } else { chars[0] = chars[0].toUpperCase(); } modifiedWord = chars.join(''); } break;
         }
-        return (modifiedWord !== word && modifiedWord !== "") ? modifiedWord : generateError(word, 'replacedLetter');
+        if (modifiedWord === word || modifiedWord === "") { if (word.length > 0 && errorType !== 'replacedLetter') { let fallbackWord = generateError(word, 'replacedLetter'); if (fallbackWord !== word) { return fallbackWord; } } return word; } return modifiedWord;
     }
 
     // ========= Sprachausgabe =========
