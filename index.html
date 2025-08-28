@@ -188,6 +188,7 @@
 <script>
     // ========= DOM-Elemente =========
     const appContainer = document.getElementById('app-container');
+    const mainTitle = document.querySelector('#app-container > h1'); // <-- ÄNDERUNG 1: H1-Element referenzieren
     const startView = document.getElementById('start-view');
     const gameView = document.getElementById('game-view');
     const finishView = document.getElementById('finish-view');
@@ -250,6 +251,9 @@
     function showView(viewToShow) {
         document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
         viewToShow.classList.add('active');
+
+        // <-- ÄNDERUNG 2: Titel nur auf der Startseite anzeigen
+        mainTitle.style.display = (viewToShow.id === 'start-view') ? 'block' : 'none';
     }
 
     function showStartView() {
