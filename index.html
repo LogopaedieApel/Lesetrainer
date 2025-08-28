@@ -99,6 +99,52 @@
             font-size: 1rem;
         }
 
+        /* Bestehende Regel anpassen */
+        #two-player-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            flex-grow: 1; /* NEU: Lässt diesen Container den verfügbaren Platz im Game-View füllen */
+        }
+
+        /* Bestehende Regel anpassen */
+        .player-area {
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            flex: 1; /* NEU: Der Schlüssel zur gleichmäßigen Aufteilung! (Kurz für flex-grow: 1) */
+            display: flex; /* NEU: Macht den Bereich selbst zu einem Flex-Container... */
+            flex-direction: column; /* NEU: ...um seinen Inhalt vertikal anzuordnen. */
+        }
+
+        /* Bestehende Regel anpassen */
+        .player-area .word-pool {
+            min-height: 80px;
+            flex-grow: 1; /* NEU: Lässt den Wort-Pool wachsen, um den neuen Platz sinnvoll zu nutzen */
+            display: flex; /* NEU: Verbessert die Ausrichtung der Wörter im Pool */
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* NEU: Eine zusätzliche Regel, um den Game-View selbst flexibel zu machen */
+        #game-view.active {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        /* NEU: Den App-Container im Zwei-Spieler-Modus ebenfalls anpassen */
+        #app-container.two-player-mode {
+            max-width: 900px;
+            min-height: 90vh;
+            display: flex; /* NEU */
+            flex-direction: column; /* NEU */
+        }
+
         /* Vorhandene CSS-Stile für Schalter, Slider etc. (unverändert) */
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; vertical-align: middle; }
         .switch input { opacity: 0; width: 0; height: 0; }
