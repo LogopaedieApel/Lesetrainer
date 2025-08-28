@@ -59,6 +59,11 @@
             /* Der Schlüssel für die gegenüberliegende Ansicht */
             transform: rotate(180deg);
         }
+
+        /* NEU: Dreht die Inhalte im Spieler-2-Bereich zurück, damit sie lesbar sind. */
+        #player2-area > div {
+            transform: rotate(180deg);
+        }
         .player-area h2 { margin-top: 0; }
         .player-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; }
         .score { font-size: 1.2rem; }
