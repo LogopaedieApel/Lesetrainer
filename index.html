@@ -308,7 +308,7 @@
     }
 
     function showStartView() {
-        document.body.classList.remove('fullscreen-mode'); // KORREKTUR
+        document.body.classList.remove('fullscreen-mode');
         appContainer.classList.remove('two-player-mode');
         gameMode = 'single';
         document.querySelector('input[name="gameMode"][value="single"]').checked = true;
@@ -366,10 +366,10 @@
         currentSentenceIndex = 0;
 
         if (gameMode === 'single') {
-            document.body.classList.remove('fullscreen-mode'); // KORREKTUR
+            document.body.classList.remove('fullscreen-mode');
             startSinglePlayerGame();
         } else {
-            document.body.classList.add('fullscreen-mode'); // KORREKTUR
+            document.body.classList.add('fullscreen-mode');
             totalRounds = Math.min(parseInt(roundsInput.value, 10), allSentences.length);
             if (totalRounds < 1) {
                 alert("Bitte eine gültige Rundenanzahl eingeben.");
@@ -497,7 +497,6 @@
                 </div>
             </div>`;
         
-        // KORREKTUR: Spieler-Objekte vollständig initialisieren
         player1 = {
             id: 1, score: 0, reconstructedWords: [],
             scoreEl: document.getElementById('p1-score'),
@@ -542,34 +541,59 @@
         displayWords(shuffledWords, player2.wordPoolEl, player2);
         playCurrentSentence();
     }
+
+    // ===============================================
+    // ========= START DER KORRIGIERTEN LOGIK ========
+    // ===============================================
+
     function handleTwoPlayerWordClick(word, button, player) {
-        if (roundOver) return;
+        // KORREKTUR: Die "roundOver"-Prüfung wird hier entfernt,
+        // damit beide Klicks zumindest die Chance haben, verarbeitet zu werden.
+        
         button.disabled = true;
         player.reconstructedWords.push(word);
         player.reconstructionEl.textContent = player.reconstructedWords.join(' ');
         checkTwoPlayerSentence(player);
     }
+
     function checkTwoPlayerSentence(player) {
+        // KORREKTUR: Die Prüfung wird hierher verschoben.
+        // Das stellt sicher, dass, selbst wenn zwei Klicks fast gleichzeitig reinkommen,
+        // nur der erste, der diese Funktion vollständig durchläuft, die Runde gewinnt.
+        if (roundOver) return;
+
         const reconstructed = player.reconstructedWords.join(' ');
         const original = originalWords.slice(0, player.reconstructedWords.length).join(' ');
+
         if (reconstructed !== original) {
             player.feedbackEl.textContent = 'Falsch!';
             player.feedbackEl.className = 'feedback-message incorrect';
+            
+            const playerButtons = player.wordPoolEl.querySelectorAll('.word-button');
+
             setTimeout(() => {
-                player.reconstructedWords = [];
-                player.reconstructionEl.textContent = '\u00A0';
-                player.feedbackEl.textContent = '';
-                player.wordPoolEl.querySelectorAll('.word-button').forEach(btn => btn.disabled = false);
+                // Nur die Buttons dieses Spielers zurücksetzen, wenn die Runde noch nicht gewonnen wurde.
+                if (!roundOver) { 
+                    player.reconstructedWords = [];
+                    player.reconstructionEl.textContent = '\u00A0';
+                    player.feedbackEl.textContent = '';
+                    playerButtons.forEach(btn => btn.disabled = false);
+                }
             }, 1000);
+
         } else if (player.reconstructedWords.length === originalWords.length) {
-            roundOver = true;
+            // Dies ist der kritische Abschnitt. Der erste Spieler, der hier ankommt, gewinnt.
+            roundOver = true; 
+            
             const winner = player;
             const loser = (player.id === 1) ? player2 : player1;
             const roundPoints = originalWords.length;
+            
             winner.score += roundPoints;
             winner.scoreEl.textContent = `Punkte: ${winner.score}`;
             winner.feedbackEl.textContent = `Runde gewonnen! +${roundPoints} Punkte`;
             winner.feedbackEl.className = 'feedback-message correct';
+
             let loserPoints = 0;
             for (let i = 0; i < loser.reconstructedWords.length; i++) {
                 if (loser.reconstructedWords[i] === originalWords[i]) {
@@ -580,14 +604,22 @@
             loser.scoreEl.textContent = `Punkte: ${loser.score}`;
             loser.feedbackEl.textContent = `+${loserPoints} Punkte für richtige Wörter`;
             loser.feedbackEl.className = 'feedback-message';
+
+            // Jetzt, wo der Gewinner feststeht, werden global alle Buttons deaktiviert.
             document.querySelectorAll('.word-button').forEach(btn => btn.disabled = true);
             document.getElementById('next-sentence-button').style.display = 'inline-block';
         }
     }
+
+    // ===============================================
+    // ========== ENDE DER KORRIGIERTEN LOGIK ========
+    // ===============================================
+
     function loadNextTwoPlayerSentence() {
         currentSentenceIndex++;
         loadTwoPlayerSentence(currentSentenceIndex);
     }
+
     function showTwoPlayerFinishView() {
         let winnerText = '';
         if (player1.score > player2.score) {
