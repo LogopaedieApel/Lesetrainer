@@ -3,6 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- ============= PWA-ERGÄNZUNGEN START ============= -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <!-- Für iOS-Geräte -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lese-Trainer">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <!-- ============= PWA-ERGÄNZUNGEN ENDE ============= -->
+
     <title>Interaktiver Lese-Trainer</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
@@ -209,6 +220,7 @@
     let allSentences = [];
     let currentSentenceIndex = 0;
     let originalWords = [];
+    let reconstructedWords = [];
     let germanVoice = null;
 
     // Einstellungen
@@ -674,5 +686,21 @@
         }
     }
 </script>
+
+<!-- ============= PWA-ERGÄNZUNG: SERVICE WORKER REGISTRIERUNG ============= -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('Service Worker registriert:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker Registrierung fehlgeschlagen:', error);
+                });
+        });
+    }
+</script>
+
 </body>
 </html>
