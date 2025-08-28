@@ -15,7 +15,7 @@
     <!-- ============= PWA-ERGÄNZUNGEN ENDE ============= -->
 
     <title>Interaktiver Lese-Trainer</title>
-        <style>
+    <style>
         /* NEU: Grundregeln für vollen Viewport */
         html, body {
             height: 100%;
@@ -67,7 +67,6 @@
             flex-grow: 1;
         }
 
-        /* ... (CSS für .list-item, button, .menu-button etc. bleibt unverändert) ... */
         .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; text-align: left; }
         .list-item:hover { background-color: #e9ecef; border-color: #ced4da; }
         .list-item h3 { margin: 0 0 5px 0; color: #007bff; }
@@ -76,7 +75,7 @@
         button { padding: 12px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; transition: background-color 0.2s; }
         button:hover:not(:disabled) { background-color: #0056b3; }
         button:disabled { background-color: #e0e0e0; cursor: not-allowed; color: #999; }
-        .menu-button { background-color: #6c757d; margin-top: 0; } /* margin-top entfernt */
+        .menu-button { background-color: #6c757d; margin-top: 0; }
         
         /* Einzelspieler-Layout */
         .single-player-game { text-align: center; }
@@ -134,10 +133,9 @@
         
         .player-area .feedback-message { min-height: 20px; font-size: 0.9rem; }
 
-        /* NEU: Styling für die neuen Buttons und die zentrale Leiste */
         .play-audio-button-player {
             background-color: #17a2b8;
-            align-self: center; /* Zentriert den Button horizontal */
+            align-self: center;
             margin-top: 10px;
         }
 
@@ -148,10 +146,9 @@
             gap: 20px;
             padding: 10px 0;
             background-color: #e9ecef;
-            flex-shrink: 0; /* Verhindert, dass die Leiste schrumpft */
+            flex-shrink: 0;
         }
         
-        /* ... (Restliches CSS für Spielmodus-Auswahl, Slider etc. bleibt unverändert) ... */
         .game-mode-selection label { display: inline-block; margin: 0 10px; font-size: 1.1rem; cursor: pointer; }
         #rounds-container { margin-top: 15px; display: none; }
         #rounds-container label { margin-right: 10px; }
@@ -180,8 +177,8 @@
         <!-- Start-Ansicht -->
         <div id="start-view" class="view active">
             <h2>Wähle eine Satzliste zum Üben</h2>
-
-            <!-- NEU: SPIELMODUS-AUSWAHL -->
+            
+            <!-- (Inhalt der Start-Ansicht bleibt unverändert) -->
             <div class="settings-section">
                 <h3>Spielmodus</h3>
                 <div class="game-mode-selection">
@@ -197,8 +194,6 @@
                     <input type="number" id="rounds-input" value="5" min="1" max="50">
                 </div>
             </div>
-
-            <!-- Zufällige Reihenfolge -->
             <div class="settings-section">
                 <h3>Zufällige Reihenfolge</h3>
                 <label class="switch">
@@ -207,8 +202,6 @@
                 </label>
                 <label for="random-order-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Sätze randomisieren</label>
             </div>
-            
-            <!-- Fehler-Modus -->
             <div class="settings-section">
                 <h3>Fehler-Modus (Optional)</h3>
                 <label class="switch">
@@ -216,7 +209,6 @@
                     <span class="slider round"></span>
                 </label>
                 <label for="error-mode-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Fehler aktivieren</label>
-
                 <div id="error-type-selection" style="display: none; margin-top: 15px;">
                     <h4>Fehlerart auswählen:</h4>
                      <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -234,22 +226,16 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Listenauswahl -->
             <div id="list-selection-container" class="settings-section">
                 <p id="loading-indicator">Lade Listen...</p>
             </div>
         </div>
 
-        <!-- Spiel-Ansicht (wird dynamisch befüllt) -->
-        <div id="game-view" class="view">
-            <!-- Inhalt wird per JS generiert, je nach Spielmodus -->
-        </div>
+        <!-- Spiel-Ansicht -->
+        <div id="game-view" class="view"></div>
 
         <!-- Finish-Ansicht -->
-        <div id="finish-view" class="view">
-            <!-- Inhalt wird per JS generiert, je nach Spielmodus -->
-        </div>
+        <div id="finish-view" class="view"></div>
     </div>
 
 <script>
@@ -418,12 +404,8 @@
         loadSinglePlayerSentence(0);
     }
 
-    // ... (alle Funktionen für den Einzelspieler-Modus bleiben unverändert) ...
     function loadSinglePlayerSentence(index) {
-        if (index >= allSentences.length) {
-            showSinglePlayerFinishView();
-            return;
-        }
+        if (index >= allSentences.length) { showSinglePlayerFinishView(); return; }
         const currentReconstruction = document.getElementById('current-reconstruction');
         const feedbackMessage = document.getElementById('feedback-message');
         const nextSentenceButton = document.getElementById('next-sentence-button');
@@ -517,9 +499,7 @@
         
         // KORREKTUR: Spieler-Objekte vollständig initialisieren
         player1 = {
-            id: 1,
-            score: 0,
-            reconstructedWords: [],
+            id: 1, score: 0, reconstructedWords: [],
             scoreEl: document.getElementById('p1-score'),
             progressEl: document.getElementById('p1-progress'),
             reconstructionEl: document.getElementById('p1-reconstruction'),
@@ -527,9 +507,7 @@
             feedbackEl: document.getElementById('p1-feedback')
         };
         player2 = {
-            id: 2,
-            score: 0,
-            reconstructedWords: [],
+            id: 2, score: 0, reconstructedWords: [],
             scoreEl: document.getElementById('p2-score'),
             progressEl: document.getElementById('p2-progress'),
             reconstructionEl: document.getElementById('p2-reconstruction'),
@@ -546,12 +524,8 @@
         loadTwoPlayerSentence(0);
     }
     
-    // ... (restliche Zwei-Spieler-Funktionen und Hilfsfunktionen bleiben unverändert) ...
     function loadTwoPlayerSentence(index) {
-        if (index >= allSentences.length) {
-            showTwoPlayerFinishView();
-            return;
-        }
+        if (index >= allSentences.length) { showTwoPlayerFinishView(); return; }
         roundOver = false;
         document.getElementById('next-sentence-button').style.display = 'none';
         [player1, player2].forEach(p => {
@@ -633,6 +607,8 @@
         document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
         showView(finishView);
     }
+    
+    // ========= Geteilte Hilfsfunktionen =========
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -700,6 +676,21 @@
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         }
+    }
+</script>
+
+<!-- ============= PWA-ERGÄNZUNG: SERVICE WORKER REGISTRIERUNG ============= -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('Service Worker registriert:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker Registrierung fehlgeschlagen:', error);
+                });
+        });
     }
 </script>
 
