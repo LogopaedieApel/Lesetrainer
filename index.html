@@ -16,57 +16,15 @@
 
     <title>Interaktiver Lese-Trainer</title>
     <style>
-        /* NEU: Grundregeln für vollen Viewport */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f0f2f5; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 20px; /* Bleibt für Einzelspieler-Modus */
-            box-sizing: border-box; 
-        }
-        
-        #app-container { 
-            background-color: #ffffff; 
-            padding: 25px 30px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
-            width: 100%; 
-            max-width: 700px; 
-            text-align: center; 
-            transition: max-width 0.3s ease, min-height 0.3s ease; 
-        }
-        
-        /* NEU: Regeln für den Vollbildmodus */
-        body.fullscreen-mode {
-            padding: 0; /* Entfernt den Abstand um den Container */
-        }
-        
-        #app-container.two-player-mode {
-            max-width: 100%;
-            height: 100%; /* Streckt den Container auf volle Höhe */
-            border-radius: 0;
-            box-shadow: none;
-            display: flex;
-            flex-direction: column;
-        }
-
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; transition: max-width 0.3s ease, min-height 0.3s ease; }
+        body.fullscreen-mode { padding: 0; }
+        #app-container.two-player-mode { max-width: 100%; height: 100%; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
         h1, h2, h3 { color: #333; }
         .view { display: none; }
         .view.active { display: block; }
-
-        #game-view.active {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
+        #game-view.active { display: flex; flex-direction: column; flex-grow: 1; }
         .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; text-align: left; }
         .list-item:hover { background-color: #e9ecef; border-color: #ced4da; }
         .list-item h3 { margin: 0 0 5px 0; color: #007bff; }
@@ -76,8 +34,6 @@
         button:hover:not(:disabled) { background-color: #0056b3; }
         button:disabled { background-color: #e0e0e0; cursor: not-allowed; color: #999; }
         .menu-button { background-color: #6c757d; margin-top: 0; }
-        
-        /* Einzelspieler-Layout */
         .single-player-game { text-align: center; }
         #progress-indicator { font-size: 0.9rem; color: #777; margin-bottom: 20px; }
         #current-reconstruction { min-height: 50px; border: 2px dashed #d0d0d0; border-radius: 8px; padding: 15px; margin: 20px 0; font-size: 1.2rem; color: #333; font-weight: bold; letter-spacing: 1px; background-color: #fafafa; }
@@ -90,65 +46,18 @@
         #play-audio-button { background-color: #17a2b8; }
         #next-sentence-button { background-color: #28a745; display: none; }
         .settings-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left; }
-
-        /* ========= KORRIGIERTES CSS FÜR ZWEI-SPIELER-MODUS ========= */
-        #two-player-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            flex-grow: 1;
-        }
-        
-        .player-area {
-            border: 2px solid #007bff;
-            border-radius: 10px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            flex: 1; /* Der Schlüssel für 50% Höhe */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around; /* space-around gibt etwas mehr Luft am Rand */
-            box-sizing: border-box; /* Wichtig bei Padding */
-        }
-        
-        #player2-area {
-            border-color: #dc3545;
-            transform: rotate(180deg);
-        }
-        
+        #two-player-container { display: flex; flex-direction: column; width: 100%; flex-grow: 1; }
+        .player-area { border: 2px solid #007bff; border-radius: 10px; padding: 20px; background-color: #f8f9fa; flex: 1; display: flex; flex-direction: column; justify-content: space-around; box-sizing: border-box; }
+        #player2-area { border-color: #dc3545; transform: rotate(180deg); }
         .player-area h2 { margin-top: 0; }
         .player-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .score { font-size: 1.2rem; }
         .player-area .progress-indicator { margin: 0; }
         .player-area .current-reconstruction { font-size: 1.1rem; min-height: 45px; padding: 12px; border: 2px dashed #d0d0d0; border-radius: 8px; background-color: #fff; }
-        
-        .player-area .word-pool {
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
+        .player-area .word-pool { min-height: 80px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
         .player-area .feedback-message { min-height: 20px; font-size: 0.9rem; }
-
-        .play-audio-button-player {
-            background-color: #17a2b8;
-            align-self: center;
-            margin-top: 10px;
-        }
-
-        #central-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            padding: 10px 0;
-            background-color: #e9ecef;
-            flex-shrink: 0;
-        }
-        
+        .play-audio-button-player { background-color: #17a2b8; align-self: center; margin-top: 10px; }
+        #central-controls { display: flex; justify-content: center; align-items: center; gap: 20px; padding: 10px 0; background-color: #e9ecef; flex-shrink: 0; }
         .game-mode-selection label { display: inline-block; margin: 0 10px; font-size: 1.1rem; cursor: pointer; }
         #rounds-container { margin-top: 15px; display: none; }
         #rounds-container label { margin-right: 10px; }
@@ -174,20 +83,13 @@
     <div id="app-container">
         <h1>Interaktiver Lese-Trainer</h1>
 
-        <!-- Start-Ansicht -->
         <div id="start-view" class="view active">
             <h2>Wähle eine Satzliste zum Üben</h2>
-            
-            <!-- (Inhalt der Start-Ansicht bleibt unverändert) -->
             <div class="settings-section">
                 <h3>Spielmodus</h3>
                 <div class="game-mode-selection">
-                    <label>
-                        <input type="radio" name="gameMode" value="single" checked> Einzelspieler
-                    </label>
-                    <label>
-                        <input type="radio" name="gameMode" value="two-player"> Zwei Spieler
-                    </label>
+                    <label><input type="radio" name="gameMode" value="single" checked> Einzelspieler</label>
+                    <label><input type="radio" name="gameMode" value="two-player"> Zwei Spieler</label>
                 </div>
                 <div id="rounds-container">
                     <label for="rounds-input">Anzahl der Sätze:</label>
@@ -231,15 +133,11 @@
             </div>
         </div>
 
-        <!-- Spiel-Ansicht -->
         <div id="game-view" class="view"></div>
-
-        <!-- Finish-Ansicht -->
         <div id="finish-view" class="view"></div>
     </div>
 
 <script>
-    // ========= DOM-Elemente =========
     const appContainer = document.getElementById('app-container');
     const mainTitle = document.querySelector('#app-container > h1');
     const startView = document.getElementById('start-view');
@@ -247,8 +145,6 @@
     const finishView = document.getElementById('finish-view');
     const listSelectionContainer = document.getElementById('list-selection-container');
     const loadingIndicator = document.getElementById('loading-indicator');
-    
-    // Einstellungs-Elemente
     const gameModeRadios = document.querySelectorAll('input[name="gameMode"]');
     const roundsContainer = document.getElementById('rounds-container');
     const roundsInput = document.getElementById('rounds-input');
@@ -258,26 +154,20 @@
     const errorFrequencySlider = document.getElementById('error-frequency-slider');
     const errorFrequencyValueSpan = document.getElementById('error-frequency-value');
 
-    // ========= Globaler Spielzustand =========
     let allSentences = [];
     let currentSentenceIndex = 0;
     let originalWords = [];
     let reconstructedWords = [];
     let germanVoice = null;
-
-    // Einstellungen
     let gameMode = 'single';
     let totalRounds = 5;
     let randomOrderEnabled = true;
     let errorModeEnabled = false;
     let selectedErrorType = 'missingLetter';
     let selectedErrorFrequency = 1;
-
-    // Zwei-Spieler-Zustand
     let player1, player2;
     let roundOver = false;
 
-    // ========= Initialisierung & Navigation =========
     document.addEventListener('DOMContentLoaded', () => {
         loadMasterList();
         setupEventListeners();
@@ -323,7 +213,6 @@
         showView(startView);
     }
     
-    // ========= Laden der Daten =========
     async function loadMasterList() {
         try {
             const response = await fetch('master.json');
@@ -336,11 +225,11 @@
     }
 
     function populateListSelection(lists) {
-        listSelectionContainer.innerHTML = '';
+        listSelectionContainer.innerHTML = '<h3>Wähle eine Liste</h3>';
         lists.forEach(list => {
             const item = document.createElement('div');
             item.className = 'list-item';
-            item.innerHTML = `<h3>${list.title}</h3><p>${list.description}</p>`;
+            item.innerHTML = `<h4>${list.title}</h4><p>${list.description}</p>`;
             item.addEventListener('click', async () => {
                 try {
                     const response = await fetch(list.file);
@@ -356,7 +245,6 @@
         loadingIndicator.style.display = 'none';
     }
 
-    // ========= Spielstart-Router =========
     function startGame(sentences) {
         if (!sentences || sentences.length === 0) {
             alert('Diese Liste enthält keine Sätze.');
@@ -380,26 +268,12 @@
         }
     }
 
-    // ========= Einzelspieler-Modus =========
     function startSinglePlayerGame() {
         appContainer.classList.remove('two-player-mode');
-        gameView.innerHTML = `
-            <div class="single-player-game">
-                <div id="progress-indicator"></div>
-                <p>Höre gut zu und baue den Satz nach.</p>
-                <div id="current-reconstruction">&nbsp;</div>
-                <div id="word-pool"></div>
-                <div id="feedback-message"></div>
-                <button id="play-audio-button">Satz vorlesen</button>
-                <button id="next-sentence-button">Nächster Satz</button>
-                <br>
-                <button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button>
-            </div>`;
-        
+        gameView.innerHTML = `<div class="single-player-game"><div id="progress-indicator"></div><p>Höre gut zu und baue den Satz nach.</p><div id="current-reconstruction">&nbsp;</div><div id="word-pool"></div><div id="feedback-message"></div><button id="play-audio-button">Satz vorlesen</button><button id="next-sentence-button">Nächster Satz</button><br><button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button></div>`;
         document.getElementById('play-audio-button').addEventListener('click', playCurrentSentence);
         document.getElementById('next-sentence-button').addEventListener('click', loadNextSinglePlayerSentence);
         document.getElementById('back-to-menu-button-game').addEventListener('click', showStartView);
-
         showView(gameView);
         loadSinglePlayerSentence(0);
     }
@@ -421,12 +295,14 @@
         displayWords(shuffleArray(wordsForPool), document.getElementById('word-pool'));
         playCurrentSentence();
     }
+    
     function handleSinglePlayerWordClick(word, button) {
         button.disabled = true;
         reconstructedWords.push(word);
         document.getElementById('current-reconstruction').textContent = reconstructedWords.join(' ');
         checkSinglePlayerSentence();
     }
+
     function checkSinglePlayerSentence() {
         const feedbackMessage = document.getElementById('feedback-message');
         const reconstructed = reconstructedWords.join(' ');
@@ -446,79 +322,28 @@
             document.getElementById('next-sentence-button').style.display = 'inline-block';
         }
     }
+
     function loadNextSinglePlayerSentence() {
         currentSentenceIndex++;
         loadSinglePlayerSentence(currentSentenceIndex);
     }
+
     function showSinglePlayerFinishView() {
-        finishView.innerHTML = `
-            <h2>Großartig!</h2>
-            <p>Du hast alle Sätze erfolgreich geübt.</p>
-            <button id="restart-button">Dieselbe Liste nochmal</button>
-            <button id="back-to-menu-button-finish" class="menu-button">Andere Liste wählen</button>
-        `;
+        finishView.innerHTML = `<h2>Großartig!</h2><p>Du hast alle Sätze erfolgreich geübt.</p><button id="restart-button">Dieselbe Liste nochmal</button><button id="back-to-menu-button-finish" class="menu-button">Andere Liste wählen</button>`;
         document.getElementById('restart-button').addEventListener('click', () => startGame(allSentences));
         document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
         showView(finishView);
     }
 
-    // ========= Zwei-Spieler-Modus =========
     function startTwoPlayerGame() {
         appContainer.classList.add('two-player-mode');
-        gameView.innerHTML = `
-            <div id="two-player-container">
-                <div id="player2-area" class="player-area">
-                     <div class="player-header">
-                        <h2>Spieler 2</h2>
-                        <div id="p2-score" class="score">Punkte: 0</div>
-                    </div>
-                    <div id="p2-progress" class="progress-indicator"></div>
-                    <div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div>
-                    <div id="p2-word-pool" class="word-pool"></div>
-                    <button id="p2-play-audio-button" class="play-audio-button-player">Satz vorlesen</button>
-                    <div id="p2-feedback" class="feedback-message"></div>
-                </div>
-
-                <div id="central-controls">
-                    <button id="next-sentence-button" style="display:none;">Nächster Satz</button>
-                    <button id="end-game-button" class="menu-button">Spiel beenden</button>
-                </div>
-
-                <div id="player1-area" class="player-area">
-                    <div class="player-header">
-                        <h2>Spieler 1</h2>
-                        <div id="p1-score" class="score">Punkte: 0</div>
-                    </div>
-                    <div id="p1-progress" class="progress-indicator"></div>
-                    <div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div>
-                    <div id="p1-word-pool" class="word-pool"></div>
-                    <button id="p1-play-audio-button" class="play-audio-button-player">Satz vorlesen</button>
-                    <div id="p1-feedback" class="feedback-message"></div>
-                </div>
-            </div>`;
-        
-        player1 = {
-            id: 1, score: 0, reconstructedWords: [],
-            scoreEl: document.getElementById('p1-score'),
-            progressEl: document.getElementById('p1-progress'),
-            reconstructionEl: document.getElementById('p1-reconstruction'),
-            wordPoolEl: document.getElementById('p1-word-pool'),
-            feedbackEl: document.getElementById('p1-feedback')
-        };
-        player2 = {
-            id: 2, score: 0, reconstructedWords: [],
-            scoreEl: document.getElementById('p2-score'),
-            progressEl: document.getElementById('p2-progress'),
-            reconstructionEl: document.getElementById('p2-reconstruction'),
-            wordPoolEl: document.getElementById('p2-word-pool'),
-            feedbackEl: document.getElementById('p2-feedback')
-        };
-        
+        gameView.innerHTML = `<div id="two-player-container"><div id="player2-area" class="player-area"><div class="player-header"><h2>Spieler 2</h2><div id="p2-score" class="score">Punkte: 0</div></div><div id="p2-progress" class="progress-indicator"></div><div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div><div id="p2-word-pool" class="word-pool"></div><button id="p2-play-audio-button" class="play-audio-button-player">Satz vorlesen</button><div id="p2-feedback" class="feedback-message"></div></div><div id="central-controls"><button id="next-sentence-button" style="display:none;">Nächster Satz</button><button id="end-game-button" class="menu-button">Spiel beenden</button></div><div id="player1-area" class="player-area"><div class="player-header"><h2>Spieler 1</h2><div id="p1-score" class="score">Punkte: 0</div></div><div id="p1-progress" class="progress-indicator"></div><div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div><div id="p1-word-pool" class="word-pool"></div><button id="p1-play-audio-button" class="play-audio-button-player">Satz vorlesen</button><div id="p1-feedback" class="feedback-message"></div></div></div>`;
+        player1 = { id: 1, score: 0, reconstructedWords: [], scoreEl: document.getElementById('p1-score'), progressEl: document.getElementById('p1-progress'), reconstructionEl: document.getElementById('p1-reconstruction'), wordPoolEl: document.getElementById('p1-word-pool'), feedbackEl: document.getElementById('p1-feedback') };
+        player2 = { id: 2, score: 0, reconstructedWords: [], scoreEl: document.getElementById('p2-score'), progressEl: document.getElementById('p2-progress'), reconstructionEl: document.getElementById('p2-reconstruction'), wordPoolEl: document.getElementById('p2-word-pool'), feedbackEl: document.getElementById('p2-feedback') };
         document.getElementById('p1-play-audio-button').addEventListener('click', playCurrentSentence);
         document.getElementById('p2-play-audio-button').addEventListener('click', playCurrentSentence);
         document.getElementById('next-sentence-button').addEventListener('click', loadNextTwoPlayerSentence);
         document.getElementById('end-game-button').addEventListener('click', showStartView);
-
         showView(gameView);
         loadTwoPlayerSentence(0);
     }
@@ -547,19 +372,17 @@
     // ===============================================
 
     function handleTwoPlayerWordClick(word, button, player) {
-        // KORREKTUR: Die "roundOver"-Prüfung wird hier entfernt,
-        // damit beide Klicks zumindest die Chance haben, verarbeitet zu werden.
-        
+        if (roundOver) return;
+
         button.disabled = true;
+        
         player.reconstructedWords.push(word);
         player.reconstructionEl.textContent = player.reconstructedWords.join(' ');
+        
         checkTwoPlayerSentence(player);
     }
 
     function checkTwoPlayerSentence(player) {
-        // KORREKTUR: Die Prüfung wird hierher verschoben.
-        // Das stellt sicher, dass, selbst wenn zwei Klicks fast gleichzeitig reinkommen,
-        // nur der erste, der diese Funktion vollständig durchläuft, die Runde gewinnt.
         if (roundOver) return;
 
         const reconstructed = player.reconstructedWords.join(' ');
@@ -572,7 +395,6 @@
             const playerButtons = player.wordPoolEl.querySelectorAll('.word-button');
 
             setTimeout(() => {
-                // Nur die Buttons dieses Spielers zurücksetzen, wenn die Runde noch nicht gewonnen wurde.
                 if (!roundOver) { 
                     player.reconstructedWords = [];
                     player.reconstructionEl.textContent = '\u00A0';
@@ -582,7 +404,6 @@
             }, 1000);
 
         } else if (player.reconstructedWords.length === originalWords.length) {
-            // Dies ist der kritische Abschnitt. Der erste Spieler, der hier ankommt, gewinnt.
             roundOver = true; 
             
             const winner = player;
@@ -605,7 +426,6 @@
             loser.feedbackEl.textContent = `+${loserPoints} Punkte für richtige Wörter`;
             loser.feedbackEl.className = 'feedback-message';
 
-            // Jetzt, wo der Gewinner feststeht, werden global alle Buttons deaktiviert.
             document.querySelectorAll('.word-button').forEach(btn => btn.disabled = true);
             document.getElementById('next-sentence-button').style.display = 'inline-block';
         }
@@ -629,18 +449,11 @@
         } else {
             winnerText = 'Unentschieden!';
         }
-        finishView.innerHTML = `
-            <h2>Spiel beendet!</h2>
-            <h3>${winnerText}</h3>
-            <p style="font-size: 1.2rem; margin: 10px 0;">Spieler 1: <strong>${player1.score}</strong> Punkte</p>
-            <p style="font-size: 1.2rem; margin: 10px 0;">Spieler 2: <strong>${player2.score}</strong> Punkte</p>
-            <button id="back-to-menu-button-finish" class="menu-button">Zurück zum Hauptmenü</button>
-        `;
+        finishView.innerHTML = `<h2>Spiel beendet!</h2><h3>${winnerText}</h3><p style="font-size: 1.2rem; margin: 10px 0;">Spieler 1: <strong>${player1.score}</strong> Punkte</p><p style="font-size: 1.2rem; margin: 10px 0;">Spieler 2: <strong>${player2.score}</strong> Punkte</p><button id="back-to-menu-button-finish" class="menu-button">Zurück zum Hauptmenü</button>`;
         document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
         showView(finishView);
     }
     
-    // ========= Geteilte Hilfsfunktionen =========
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -648,6 +461,7 @@
         }
         return array;
     }
+
     function displayWords(words, targetElement, player = null) {
         targetElement.innerHTML = '';
         words.forEach(word => {
@@ -664,6 +478,7 @@
             targetElement.appendChild(button);
         });
     }
+
     function generateWordPool(correctWords) {
         let pool = [...correctWords];
         if (errorModeEnabled) {
@@ -682,6 +497,7 @@
         }
         return pool;
     }
+
     function generateError(word, errorType) { 
         if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {return word;}
         let modifiedWord = word; let chars = word.split('');
@@ -696,9 +512,11 @@
         }
         if (modifiedWord === word || modifiedWord === "") { if (word.length > 0 && errorType !== 'replacedLetter') { let fallbackWord = generateError(word, 'replacedLetter'); if (fallbackWord !== word) { return fallbackWord; } } return word; } return modifiedWord;
     }
+
     window.speechSynthesis.onvoiceschanged = () => {
         germanVoice = window.speechSynthesis.getVoices().find(v => v.lang === 'de-DE');
     };
+
     function playCurrentSentence() {
         if ('speechSynthesis' in window && allSentences.length > 0) {
             const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]);
@@ -711,17 +529,12 @@
     }
 </script>
 
-<!-- ============= PWA-ERGÄNZUNG: SERVICE WORKER REGISTRIERUNG ============= -->
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('Service Worker registriert:', registration);
-                })
-                .catch(error => {
-                    console.log('Service Worker Registrierung fehlgeschlagen:', error);
-                });
+                .then(registration => { console.log('Service Worker registriert:', registration); })
+                .catch(error => { console.log('Service Worker Registrierung fehlgeschlagen:', error); });
         });
     }
 </script>
