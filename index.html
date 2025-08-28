@@ -6,115 +6,103 @@
     <title>Interaktiver Lese-Trainer</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; }
-        h1, h2 { color: #333; }
+        #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; transition: max-width 0.3s ease, min-height 0.3s ease; }
+        
+        /* Container wird im Zwei-Spieler-Modus größer */
+        #app-container.two-player-mode {
+            max-width: 900px;
+            min-height: 90vh;
+        }
+
+        h1, h2, h3 { color: #333; }
         .view { display: none; }
         .view.active { display: block; }
-        /* Hier wurde der margin-top für list-selection-container entfernt, da die Einstellungen jetzt darüber sind */
-        #list-selection-container { text-align: left; }
-        .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
+        .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; text-align: left; }
         .list-item:hover { background-color: #e9ecef; border-color: #ced4da; }
         .list-item h3 { margin: 0 0 5px 0; color: #007bff; }
         .list-item p { margin: 0; color: #6c757d; font-size: 0.9rem; }
         #loading-indicator { font-style: italic; color: #666; }
+        button { padding: 12px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; transition: background-color 0.2s; }
+        button:hover:not(:disabled) { background-color: #0056b3; }
+        button:disabled { background-color: #e0e0e0; cursor: not-allowed; color: #999; }
+        .menu-button { background-color: #6c757d; margin-top: 20px; }
+        
+        /* Einzelspieler-Layout */
+        .single-player-game { text-align: center; }
         #progress-indicator { font-size: 0.9rem; color: #777; margin-bottom: 20px; }
         #current-reconstruction { min-height: 50px; border: 2px dashed #d0d0d0; border-radius: 8px; padding: 15px; margin: 20px 0; font-size: 1.2rem; color: #333; font-weight: bold; letter-spacing: 1px; background-color: #fafafa; }
         #word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
         #feedback-message { margin-top: 15px; font-weight: bold; min-height: 24px; }
         #feedback-message.correct { color: #28a745; }
         #feedback-message.incorrect { color: #dc3545; }
-        button { padding: 12px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; transition: background-color 0.2s; }
-        button:hover:not(:disabled) { background-color: #0056b3; }
-        button:disabled { background-color: #e0e0e0; cursor: not-allowed; color: #999; }
         .word-button { background-color: #6c757d; }
         .word-button:hover:not(:disabled) { background-color: #5a6268; }
-        #play-audio-button { background-color: #17a2b8; margin-right: 10px; }
+        #play-audio-button { background-color: #17a2b8; }
         #next-sentence-button { background-color: #28a745; display: none; }
-        .menu-button { background-color: #6c757d; margin-top: 20px; }
+        .settings-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left; }
 
-        /* NEUER CSS FÜR DEN TOGGLE SWITCH */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-            vertical-align: middle; /* Align with label */
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: .4s;
-            transition: .4s;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            -webkit-transition: .4s;
-            transition: .4s;
-        }
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-        input:focus + .slider {
-            box-shadow: 0 0 1px #2196F3;
-        }
-        input:checked + .slider:before {
-            -webkit-transform: translateX(26px);
-            -ms-transform: translateX(26px);
-            transform: translateX(26px);
-        }
-        /* Rounded sliders */
-        .slider.round {
-            border-radius: 34px;
-        }
-        .slider.round:before {
-            border-radius: 50%;
-        }
-        #error-type-selection label {
+        /* ========= NEUES CSS FÜR ZWEI-SPIELER-MODUS ========= */
+        #two-player-container {
             display: flex;
-            align-items: center;
-            gap: 8px; /* Space between radio and text */
-            margin-bottom: 5px;
-            font-size: 0.95rem;
-            color: #444;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
         }
-        #error-type-selection input[type="radio"] {
-            margin: 0; /* Remove default margin for better alignment */
+        .player-area {
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #f8f9fa;
         }
-        /* NEUER CSS FÜR DEN SLIDER */
-        #error-frequency-container {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
+        #player2-area {
+            border-color: #dc3545;
+            /* Der Schlüssel für die gegenüberliegende Ansicht */
+            transform: rotate(180deg);
         }
-        #error-frequency-slider {
-            width: calc(100% - 70px); /* Adjust width to leave space for value */
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-        #error-frequency-value {
-            font-weight: bold;
-            color: #007bff;
+        .player-area h2 { margin-top: 0; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; }
+        .score { font-size: 1.2rem; }
+        .player-area .progress-indicator { margin: 0; }
+        .player-area .current-reconstruction { font-size: 1.1rem; min-height: 45px; padding: 12px; }
+        .player-area .word-pool { min-height: 80px; }
+        .player-area .feedback-message { min-height: 20px; font-size: 0.9rem; }
+        #two-player-controls { margin-top: 15px; text-align: center; }
+
+        /* ========= NEUES CSS FÜR SPIELMODUS-AUSWAHL ========= */
+        .game-mode-selection label {
             display: inline-block;
-            width: 20px; /* Fixed width for consistent display */
-            text-align: right;
-            vertical-align: middle;
+            margin: 0 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
         }
+        #rounds-container {
+            margin-top: 15px;
+            display: none; /* Standardmäßig ausgeblendet */
+        }
+        #rounds-container label {
+             margin-right: 10px;
+        }
+        #rounds-input {
+            width: 60px;
+            padding: 5px;
+            font-size: 1rem;
+        }
+
+        /* Vorhandene CSS-Stile für Schalter, Slider etc. (unverändert) */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; vertical-align: middle; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: #2196F3; }
+        input:focus + .slider { box-shadow: 0 0 1px #2196F3; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
+        #error-type-selection label { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 0.95rem; color: #444; }
+        #error-type-selection input[type="radio"] { margin: 0; }
+        #error-frequency-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        #error-frequency-slider { width: calc(100% - 70px); margin-right: 10px; vertical-align: middle; }
+        #error-frequency-value { font-weight: bold; color: #007bff; display: inline-block; width: 20px; text-align: right; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -126,22 +114,35 @@
         <div id="start-view" class="view active">
             <h2>Wähle eine Satzliste zum Üben</h2>
 
-            <!-- NEUER BEREICH FÜR ZUFÄLLIGE REIHENFOLGE - JETZT FRÜHER PLATZIERT -->
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left;">
+            <!-- NEU: SPIELMODUS-AUSWAHL -->
+            <div class="settings-section">
+                <h3>Spielmodus</h3>
+                <div class="game-mode-selection">
+                    <label>
+                        <input type="radio" name="gameMode" value="single" checked> Einzelspieler
+                    </label>
+                    <label>
+                        <input type="radio" name="gameMode" value="two-player"> Zwei Spieler
+                    </label>
+                </div>
+                <div id="rounds-container">
+                    <label for="rounds-input">Anzahl der Sätze:</label>
+                    <input type="number" id="rounds-input" value="5" min="1" max="50">
+                </div>
+            </div>
+
+            <!-- Zufällige Reihenfolge -->
+            <div class="settings-section">
                 <h3>Zufällige Reihenfolge</h3>
                 <label class="switch">
                     <input type="checkbox" id="random-order-toggle" checked>
                     <span class="slider round"></span>
                 </label>
                 <label for="random-order-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Sätze randomisieren</label>
-                <p style="font-size: 0.85em; color: #666; margin-top: 5px;">
-                    (Die Sätze werden nicht zwangsläufig in der ursprünglichen Reihenfolge angezeigt.)
-                </p>
             </div>
-            <!-- ENDE ZUFÄLLIGE REIHENFOLGE -->
-
-            <!-- NEUER BEREICH FÜR FEHLER-MODUS (Optional) - JETZT FRÜHER PLATZIERT -->
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: left;">
+            
+            <!-- Fehler-Modus -->
+            <div class="settings-section">
                 <h3>Fehler-Modus (Optional)</h3>
                 <label class="switch">
                     <input type="checkbox" id="error-mode-toggle">
@@ -151,474 +152,523 @@
 
                 <div id="error-type-selection" style="display: none; margin-top: 15px;">
                     <h4>Fehlerart auswählen:</h4>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label><input type="radio" name="errorType" value="missingLetter" checked> Buchstabe fehlt (z. B. Tisch → Tsch)</label>
-                        <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht (z. B. Maus → Muas)</label>
-                        <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe ersetzt (z. B. Ball → Balt)</label>
-                        <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)</label>
-                        <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)</label>
-                        <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)</label>
+                     <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label><input type="radio" name="errorType" value="missingLetter" checked> Buchstabe fehlt</label>
+                        <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht</label>
+                        <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe</label>
+                        <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben</label>
+                        <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben</label>
+                        <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung</label>
                     </div>
-
-                    <!-- NEUER BEREICH FÜR FEHLER-HÄUFIGKEIT -->
                     <div id="error-frequency-container">
                         <h4>Fehlerhäufigkeit pro Satz:</h4>
                         <input type="range" id="error-frequency-slider" min="1" max="5" value="1">
                         <span id="error-frequency-value">1</span> Fehler
-                        <p style="font-size: 0.85em; color: #666; margin-top: 5px;">(Anzahl der Wörter mit Fehlern)</p>
                     </div>
-                    <!-- ENDE FEHLER-HÄUFIGKEIT -->
-
                 </div>
             </div>
-            <!-- ENDE NEUER BEREICH FÜR FEHLER-MODUS -->
 
-            <!-- LISTENAUSWAHL - JETZT NACH DEN EINSTELLUNGEN PLATZIERT -->
-            <div id="list-selection-container" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+            <!-- Listenauswahl -->
+            <div id="list-selection-container" class="settings-section">
                 <p id="loading-indicator">Lade Listen...</p>
             </div>
-            <!-- ENDE LISTENAUSWAHL -->
         </div>
 
-        <!-- Spiel-Ansicht -->
+        <!-- Spiel-Ansicht (wird dynamisch befüllt) -->
         <div id="game-view" class="view">
-            <div id="progress-indicator">Satz 1 von X</div>
-            <p>Höre gut zu und baue den Satz nach.</p>
-            <div id="current-reconstruction">&nbsp;</div>
-            <div id="word-pool"></div>
-            <div id="feedback-message"></div>
-            <button id="play-audio-button">Satz vorlesen</button>
-            <button id="next-sentence-button">Nächster Satz</button>
-            <br>
-            <button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button>
+            <!-- Inhalt wird per JS generiert, je nach Spielmodus -->
         </div>
 
         <!-- Finish-Ansicht -->
         <div id="finish-view" class="view">
+            <!-- Inhalt wird per JS generiert, je nach Spielmodus -->
+        </div>
+    </div>
+
+<script>
+    // ========= DOM-Elemente =========
+    const appContainer = document.getElementById('app-container');
+    const startView = document.getElementById('start-view');
+    const gameView = document.getElementById('game-view');
+    const finishView = document.getElementById('finish-view');
+    const listSelectionContainer = document.getElementById('list-selection-container');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    
+    // Einstellungs-Elemente
+    const gameModeRadios = document.querySelectorAll('input[name="gameMode"]');
+    const roundsContainer = document.getElementById('rounds-container');
+    const roundsInput = document.getElementById('rounds-input');
+    const randomOrderToggle = document.getElementById('random-order-toggle');
+    const errorModeToggle = document.getElementById('error-mode-toggle');
+    const errorTypeSelection = document.getElementById('error-type-selection');
+    const errorFrequencySlider = document.getElementById('error-frequency-slider');
+    const errorFrequencyValueSpan = document.getElementById('error-frequency-value');
+
+    // ========= Globaler Spielzustand =========
+    let allSentences = [];
+    let currentSentenceIndex = 0;
+    let originalWords = [];
+    let germanVoice = null;
+
+    // Einstellungen
+    let gameMode = 'single'; // 'single' oder 'two-player'
+    let totalRounds = 5;
+    let randomOrderEnabled = true;
+    let errorModeEnabled = false;
+    let selectedErrorType = 'missingLetter';
+    let selectedErrorFrequency = 1;
+
+    // Zwei-Spieler-Zustand
+    let player1, player2;
+    let roundOver = false;
+
+    // ========= Initialisierung & Navigation =========
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMasterList();
+        setupEventListeners();
+        // Initialen Wert für den Slider anzeigen
+        errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
+    });
+
+    function setupEventListeners() {
+        gameModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
+            gameMode = e.target.value;
+            roundsContainer.style.display = gameMode === 'two-player' ? 'block' : 'none';
+        }));
+        randomOrderToggle.addEventListener('change', () => randomOrderEnabled = randomOrderToggle.checked);
+        errorModeToggle.addEventListener('change', () => {
+            errorModeEnabled = errorModeToggle.checked;
+            errorTypeSelection.style.display = errorModeEnabled ? 'block' : 'none';
+        });
+        document.querySelectorAll('input[name="errorType"]').forEach(radio => radio.addEventListener('change', (e) => selectedErrorType = e.target.value));
+        errorFrequencySlider.addEventListener('input', (e) => {
+            selectedErrorFrequency = parseInt(e.target.value, 10);
+            errorFrequencyValueSpan.textContent = selectedErrorFrequency;
+        });
+    }
+
+    function showView(viewToShow) {
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        viewToShow.classList.add('active');
+    }
+
+    function showStartView() {
+        appContainer.classList.remove('two-player-mode');
+        // Alle UI-Elemente und Zustände zurücksetzen
+        gameMode = 'single';
+        document.querySelector('input[name="gameMode"][value="single"]').checked = true;
+        roundsContainer.style.display = 'none';
+        randomOrderToggle.checked = true;
+        randomOrderEnabled = true;
+        errorModeToggle.checked = false;
+        errorModeEnabled = false;
+        errorTypeSelection.style.display = 'none';
+        
+        allSentences = [];
+        currentSentenceIndex = 0;
+        showView(startView);
+    }
+    
+    // ========= Laden der Daten =========
+    async function loadMasterList() {
+        try {
+            const response = await fetch('master.json');
+            if (!response.ok) throw new Error('Netzwerkfehler');
+            const data = await response.json();
+            populateListSelection(data.lists);
+        } catch (error) {
+            loadingIndicator.textContent = 'Fehler beim Laden der Satzlisten.';
+        }
+    }
+
+    function populateListSelection(lists) {
+        listSelectionContainer.innerHTML = ''; // Vorherigen Inhalt löschen
+        lists.forEach(list => {
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `<h3>${list.title}</h3><p>${list.description}</p>`;
+            item.addEventListener('click', async () => {
+                try {
+                    const response = await fetch(list.file);
+                    if (!response.ok) throw new Error(`Datei nicht gefunden.`);
+                    const sentenceData = await response.json();
+                    startGame(sentenceData.sentences);
+                } catch (error) {
+                    alert(`Fehler: ${error.message}`);
+                }
+            });
+            listSelectionContainer.appendChild(item);
+        });
+        loadingIndicator.style.display = 'none';
+    }
+
+    // ========= Spielstart-Router =========
+    function startGame(sentences) {
+        if (!sentences || sentences.length === 0) {
+            alert('Diese Liste enthält keine Sätze.');
+            return;
+        }
+
+        allSentences = randomOrderEnabled ? shuffleArray([...sentences]) : sentences;
+        currentSentenceIndex = 0;
+
+        if (gameMode === 'single') {
+            startSinglePlayerGame();
+        } else {
+            totalRounds = Math.min(parseInt(roundsInput.value, 10), allSentences.length);
+            if (totalRounds < 1) {
+                alert("Bitte eine gültige Rundenanzahl eingeben.");
+                return;
+            }
+            allSentences = allSentences.slice(0, totalRounds); // Sätze auf Rundenanzahl kürzen
+            startTwoPlayerGame();
+        }
+    }
+
+    // ========= Einzelspieler-Modus =========
+    function startSinglePlayerGame() {
+        appContainer.classList.remove('two-player-mode');
+        gameView.innerHTML = `
+            <div class="single-player-game">
+                <div id="progress-indicator"></div>
+                <p>Höre gut zu und baue den Satz nach.</p>
+                <div id="current-reconstruction">&nbsp;</div>
+                <div id="word-pool"></div>
+                <div id="feedback-message"></div>
+                <button id="play-audio-button">Satz vorlesen</button>
+                <button id="next-sentence-button">Nächster Satz</button>
+                <br>
+                <button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button>
+            </div>`;
+        
+        // Event-Listener für die neu erstellten Knöpfe
+        document.getElementById('play-audio-button').addEventListener('click', playCurrentSentence);
+        document.getElementById('next-sentence-button').addEventListener('click', loadNextSinglePlayerSentence);
+        document.getElementById('back-to-menu-button-game').addEventListener('click', showStartView);
+
+        showView(gameView);
+        loadSinglePlayerSentence(0);
+    }
+
+    function loadSinglePlayerSentence(index) {
+        if (index >= allSentences.length) {
+            showSinglePlayerFinishView();
+            return;
+        }
+
+        const currentReconstruction = document.getElementById('current-reconstruction');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const nextSentenceButton = document.getElementById('next-sentence-button');
+
+        reconstructedWords = [];
+        feedbackMessage.textContent = '';
+        feedbackMessage.className = '';
+        nextSentenceButton.style.display = 'none';
+        currentReconstruction.textContent = '\u00A0';
+        document.getElementById('progress-indicator').textContent = `Satz ${index + 1} von ${allSentences.length}`;
+
+        const currentSentence = allSentences[index];
+        originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
+
+        let wordsForPool = generateWordPool(originalWords);
+        displayWords(shuffleArray(wordsForPool), document.getElementById('word-pool'));
+        playCurrentSentence();
+    }
+
+    function handleSinglePlayerWordClick(word, button) {
+        button.disabled = true;
+        reconstructedWords.push(word);
+        document.getElementById('current-reconstruction').textContent = reconstructedWords.join(' ');
+        checkSinglePlayerSentence();
+    }
+    
+    function checkSinglePlayerSentence() {
+        const feedbackMessage = document.getElementById('feedback-message');
+        const reconstructed = reconstructedWords.join(' ');
+        const original = originalWords.slice(0, reconstructedWords.length).join(' ');
+
+        if (reconstructed !== original) {
+            feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!';
+            feedbackMessage.className = 'incorrect';
+            setTimeout(() => {
+                reconstructedWords = [];
+                document.getElementById('current-reconstruction').textContent = '\u00A0';
+                feedbackMessage.textContent = '';
+                document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = false);
+            }, 1500);
+        } else if (reconstructedWords.length === originalWords.length) {
+            feedbackMessage.textContent = 'Super, das ist richtig!';
+            feedbackMessage.className = 'correct';
+            document.getElementById('next-sentence-button').style.display = 'inline-block';
+        }
+    }
+
+    function loadNextSinglePlayerSentence() {
+        currentSentenceIndex++;
+        loadSinglePlayerSentence(currentSentenceIndex);
+    }
+
+    function showSinglePlayerFinishView() {
+        finishView.innerHTML = `
             <h2>Großartig!</h2>
             <p>Du hast alle Sätze erfolgreich geübt.</p>
             <button id="restart-button">Dieselbe Liste nochmal</button>
             <button id="back-to-menu-button-finish" class="menu-button">Andere Liste wählen</button>
-        </div>
-    </div>
+        `;
+        document.getElementById('restart-button').addEventListener('click', () => startGame(allSentences));
+        document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
+        showView(finishView);
+    }
 
-    <script>
-        // DOM-Elemente
-        const startView = document.getElementById('start-view');
-        const gameView = document.getElementById('game-view');
-        const finishView = document.getElementById('finish-view');
-        const listSelectionContainer = document.getElementById('list-selection-container');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const progressIndicator = document.getElementById('progress-indicator');
-        const currentReconstruction = document.getElementById('current-reconstruction');
-        const wordPool = document.getElementById('word-pool');
-        const feedbackMessage = document.getElementById('feedback-message');
-        const playAudioButton = document.getElementById('play-audio-button');
-        const nextSentenceButton = document.getElementById('next-sentence-button');
-        const restartButton = document.getElementById('restart-button');
-        const backToMenuGameBtn = document.getElementById('back-to-menu-button-game');
-        const backToMenuFinishBtn = document.getElementById('back-to-menu-button-finish');
+    // ========= Zwei-Spieler-Modus =========
+    function startTwoPlayerGame() {
+        appContainer.classList.add('two-player-mode');
+        gameView.innerHTML = `
+            <div id="two-player-container">
+                <!-- Spieler 1 -->
+                <div id="player1-area" class="player-area">
+                    <div class="player-header">
+                        <h2>Spieler 1</h2>
+                        <div id="p1-score" class="score">Punkte: 0</div>
+                    </div>
+                    <div id="p1-progress" class="progress-indicator"></div>
+                    <div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div>
+                    <div id="p1-word-pool" class="word-pool"></div>
+                    <div id="p1-feedback" class="feedback-message"></div>
+                </div>
+                <!-- Spieler 2 -->
+                <div id="player2-area" class="player-area">
+                     <div class="player-header">
+                        <h2>Spieler 2</h2>
+                        <div id="p2-score" class="score">Punkte: 0</div>
+                    </div>
+                    <div id="p2-progress" class="progress-indicator"></div>
+                    <div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div>
+                    <div id="p2-word-pool" class="word-pool"></div>
+                    <div id="p2-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+            <div id="two-player-controls">
+                <button id="play-audio-button">Satz vorlesen</button>
+                <button id="next-sentence-button" style="display:none;">Nächster Satz</button>
+                <button id="back-to-menu-button-game" class="menu-button">Spiel beenden</button>
+            </div>`;
         
-        // NEUE DOM-ELEMENTE FÜR ZUFÄLLIGE REIHENFOLGE
-        const randomOrderToggle = document.getElementById('random-order-toggle');
-
-        // NEUE DOM-ELEMENTE FÜR FEHLER-MODUS
-        const errorModeToggle = document.getElementById('error-mode-toggle');
-        const errorTypeSelection = document.getElementById('error-type-selection');
-        const errorTypeRadios = document.querySelectorAll('input[name="errorType"]');
-        const errorFrequencySlider = document.getElementById('error-frequency-slider');
-        const errorFrequencyValueSpan = document.getElementById('error-frequency-value');
-        
-        // Spielzustand
-        let allSentences = [];
-        let currentSentenceIndex = 0;
-        let originalWords = []; // Enthält immer die korrekten Wörter für den Vergleich
-        let reconstructedWords = [];
-        let germanVoice = null;
-
-        // NEUE SPIELZUSTÄNDE FÜR ZUFÄLLIGE REIHENFOLGE
-        let randomOrderEnabled = true;
-
-        // NEUE SPIELZUSTÄNDE FÜR FEHLER-MODUS
-        let errorModeEnabled = false;
-        let selectedErrorType = 'missingLetter'; // Standardwert beim Start
-        let selectedErrorFrequency = 1; // Standardwert für Fehlerhäufigkeit (1-5)
-
-
-        // --- Initialisierung und Navigation ---
-
-        // Event Listener
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMasterList();
-            // Initialen Wert für den Slider anzeigen
-            errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
-            // Sicherstellen, dass der erste Radio-Button standardmäßig ausgewählt ist
-            document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true;
-        });
-
-        backToMenuGameBtn.addEventListener('click', showStartView);
-        backToMenuFinishBtn.addEventListener('click', showStartView);
-        restartButton.addEventListener('click', () => startGame(allSentences)); // Bei Neustart dieselbe (ggf. schon gemischte) Liste verwenden
-        playAudioButton.addEventListener('click', playCurrentSentence);
-        nextSentenceButton.addEventListener('click', loadNextSentence);
-
-        // NEUE EVENT LISTENER FÜR ZUFÄLLIGE REIHENFOLGE
-        randomOrderToggle.addEventListener('change', () => {
-            randomOrderEnabled = randomOrderToggle.checked;
-        });
-
-        // NEUE EVENT LISTENER FÜR FEHLER-MODUS
-        errorModeToggle.addEventListener('change', () => {
-            errorModeEnabled = errorModeToggle.checked;
-            errorTypeSelection.style.display = errorModeEnabled ? 'block' : 'none';
-            // Wenn der Fehler-Modus deaktiviert wird, Zustand zurücksetzen
-            if (!errorModeEnabled) {
-                selectedErrorType = 'missingLetter'; // Reset auf Standard
-                selectedErrorFrequency = 1; // Reset auf Standard
-                errorTypeRadios.forEach(radio => radio.checked = false);
-                document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true;
-                errorFrequencySlider.value = 1;
-                errorFrequencyValueSpan.textContent = 1;
-            }
-        });
-
-        errorTypeRadios.forEach(radio => {
-            radio.addEventListener('change', (event) => {
-                selectedErrorType = event.target.value;
-            });
-        });
-
-        errorFrequencySlider.addEventListener('input', (event) => {
-            selectedErrorFrequency = parseInt(event.target.value, 10);
-            errorFrequencyValueSpan.textContent = selectedErrorFrequency;
-        });
-
-
-        function showView(viewToShow) {
-            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-            viewToShow.classList.add('active');
-        }
-
-        function showStartView() {
-            allSentences = [];
-            currentSentenceIndex = 0;
-            
-            // Zufällige Reihenfolge UI und Zustand zurücksetzen
-            randomOrderEnabled = true;
-            randomOrderToggle.checked = true;
-
-            // Fehler-Modus UI und Zustand zurücksetzen, wenn ins Menü zurückgekehrt wird
-            errorModeEnabled = false;
-            selectedErrorType = 'missingLetter'; // Reset auf Standard
-            selectedErrorFrequency = 1; // Reset auf Standard
-            errorModeToggle.checked = false;
-            errorTypeSelection.style.display = 'none';
-            errorTypeRadios.forEach(radio => radio.checked = false);
-            document.querySelector('input[name="errorType"][value="missingLetter"]').checked = true; // Setze den Standard-Radio-Button
-            errorFrequencySlider.value = 1;
-            errorFrequencyValueSpan.textContent = 1;
-
-            showView(startView);
-        }
-
-        // --- Laden der Daten (unverändert) ---
-
-        async function loadMasterList() {
-            try {
-                const response = await fetch('master.json');
-                if (!response.ok) throw new Error('Netzwerkfehler beim Laden der master.json');
-                const data = await response.json();
-                populateListSelection(data.lists);
-            } catch (error) {
-                console.error("Fehler:", error);
-                loadingIndicator.textContent = 'Fehler beim Laden der Satzlisten.';
-            }
-        }
-
-        function populateListSelection(lists) {
-            listSelectionContainer.innerHTML = '';
-            lists.forEach(list => {
-                const item = document.createElement('div');
-                item.className = 'list-item';
-                item.dataset.file = list.file;
-                item.innerHTML = `<h3>${list.title}</h3><p>${list.description}</p>`;
-                item.addEventListener('click', async () => {
-                    try {
-                        const response = await fetch(list.file);
-                        if (!response.ok) throw new Error(`Datei ${list.file} nicht gefunden.`);
-                        const sentenceData = await response.json();
-                        startGame(sentenceData.sentences);
-                    } catch (error) {
-                        alert(`Fehler beim Laden der Satzliste: ${error.message}`);
-                    }
-                });
-                listSelectionContainer.appendChild(item);
-            });
-            loadingIndicator.style.display = 'none'; // Lade-Anzeige ausblenden, wenn Listen geladen sind
-        }
-
-        // --- Hilfsfunktion zum Mischen eines Arrays (Fisher-Yates) ---
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]]; // Tausche Elemente
-            }
-            return array;
-        }
-
-        // --- Spiellogik (mit Fehler-Modus und Zufällige Reihenfolge Anpassung) ---
-        
-        function startGame(sentences) {
-            if (!sentences || sentences.length === 0) {
-                alert('Diese Liste enthält keine Sätze.');
-                return;
-            }
-            // Prüfen, ob Fehler-Modus aktiviert ist, aber keine Fehlerart ausgewählt wurde
-            if (errorModeEnabled && !selectedErrorType) {
-                alert('Bitte wählen Sie eine Fehlerart aus, um den Fehler-Modus zu starten.');
-                return;
-            }
-
-            // NEU: Sätze mischen, wenn Zufällige Reihenfolge aktiviert ist
-            if (randomOrderEnabled) {
-                allSentences = shuffleArray([...sentences]); // Eine Kopie erstellen und mischen
-            } else {
-                allSentences = sentences; // Originale Reihenfolge beibehalten
-            }
-            
-            currentSentenceIndex = 0;
-            showView(gameView);
-            loadSentence(currentSentenceIndex);
-        }
-
-        function loadSentence(index) {
-            if (index >= allSentences.length) {
-                showView(finishView);
-                return;
-            }
-            reconstructedWords = [];
-            feedbackMessage.textContent = '';
-            feedbackMessage.className = '';
-            nextSentenceButton.style.display = 'none';
-            updateReconstructionDisplay();
-            progressIndicator.textContent = `Satz ${index + 1} von ${allSentences.length}`;
-
-            const currentSentence = allSentences[index];
-            // originalWords enthält immer die korrekten Wörter für den Vergleich
-            originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
-
-            let wordsForPool = []; // Dieser Array wird die Wörter für den Pool enthalten
-
-            // FEHLER GENERIERUNG HIER
-            if (errorModeEnabled && selectedErrorType) {
-                const numWordsInSentence = originalWords.length;
-                
-                // Bestimme die Anzahl der Fehler basierend auf dem Schieberegler, 
-                // begrenzt durch die Anzahl der Wörter im Satz.
-                const numErrorsToGenerate = Math.min(selectedErrorFrequency, numWordsInSentence); 
-
-                let errorIndices = new Set();
-                while (errorIndices.size < numErrorsToGenerate) {
-                    errorIndices.add(Math.floor(Math.random() * numWordsInSentence));
-                }
-                
-                originalWords.forEach((word, idx) => {
-                    wordsForPool.push(word); // Füge IMMER das korrekte Wort hinzu
-                    if (errorIndices.has(idx)) {
-                        const errorWord = generateError(word, selectedErrorType);
-                        // Füge das fehlerhafte Wort NUR hinzu, wenn es sich vom Original unterscheidet
-                        // und nicht leer ist.
-                        if (errorWord !== word && errorWord.length > 0) {
-                            wordsForPool.push(errorWord);
-                        }
-                    }
-                });
-            } else {
-                // Wenn kein Fehler-Modus, einfach alle originalen Wörter in den Pool legen
-                wordsForPool = [...originalWords];
-            }
-
-            const shuffledWords = [...wordsForPool].sort(() => Math.random() - 0.5);
-            displayWords(shuffledWords);
-            playCurrentSentence();
-        }
-        
-        // HILFSFUNKTION FÜR FEHLERGENERIERUNG
-        function generateError(word, errorType) {
-            // Für sehr kurze Wörter (<2 Zeichen), überspringen wir bestimmte Fehlertypen,
-            // da sie sonst zu leeren oder bedeutungslosen Wörtern führen könnten.
-            // Groß-/Kleinschreibung kann auch bei einem Zeichen angewendet werden.
-            // Bei Wörtern mit nur einem Buchstaben kann 'missingLetter' oder 'swappedLetters' nicht sinnvoll angewendet werden.
-            // 'duplicatedLetters' oder 'replacedLetter' können funktionieren.
-            if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {
-                return word;
-            }
-
-            let modifiedWord = word;
-            let chars = word.split('');
-
-            // Hilfsfunktion, um die Groß-/Kleinschreibung des ursprünglichen Zeichens beizubehalten
-            const preserveCase = (originalChar, newChar) => {
-                if (!originalChar) return newChar; // Falls originalChar leer ist (z.B. nach Entfernen)
-                if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) {
-                    return newChar.toUpperCase();
-                }
-                return newChar.toLowerCase();
-            };
-
-            switch (errorType) {
-                case 'missingLetter': // Buchstabe fehlt (z. B. Tisch → Tsch)
-                    if (chars.length > 1) { 
-                        const indexToRemove = Math.floor(Math.random() * chars.length);
-                        chars.splice(indexToRemove, 1);
-                        modifiedWord = chars.join('');
-                    }
-                    break;
-                case 'swappedLetters': // Buchstaben vertauscht (z. B. Maus → Muas)
-                    if (chars.length > 1) { 
-                        const index1 = Math.floor(Math.random() * (chars.length - 1));
-                        const index2 = index1 + 1;
-                        [chars[index1], chars[index2]] = [chars[index2], chars[index1]];
-                        modifiedWord = chars.join('');
-                    }
-                    break;
-                case 'replacedLetter': // Falscher Buchstabe ersetzt (z. B. Ball → Balt)
-                    if (chars.length > 0) {
-                        const indexToReplace = Math.floor(Math.random() * chars.length);
-                        const originalChar = chars[indexToReplace].toLowerCase();
-                        const alphabet = 'abcdefghijklmnopqrstuvwxyzäöüß'; 
-                        let replacementChar = originalChar;
-                        let attempts = 0;
-                        while (replacementChar === originalChar && attempts < 10) { // Sicherstellen, dass es ein anderer Buchstabe ist
-                            replacementChar = alphabet[Math.floor(Math.random() * alphabet.length)];
-                            attempts++;
-                        }
-                        chars[indexToReplace] = preserveCase(chars[indexToReplace], replacementChar);
-                        modifiedWord = chars.join('');
-                    }
-                    break;
-                case 'duplicatedLetters': // Doppelte Buchstaben eingefügt (z. B. Schule → Schulle)
-                    if (chars.length > 0) {
-                        const indexToDuplicate = Math.floor(Math.random() * chars.length);
-                        chars.splice(indexToDuplicate, 0, chars[indexToDuplicate]);
-                        modifiedWord = chars.join('');
-                    }
-                    break;
-                case 'phoneticallySimilar': // Phonetisch ähnliche Buchstaben (z. B. Fisch → Visch)
-                    const phoneticSubstitutions = {
-                        'b': ['p'], 'p': ['b'],
-                        'd': ['t'], 't': ['d'],
-                        'g': ['k'], 'k': ['g'],
-                        'f': ['v'], 'v': ['f'],
-                        's': ['z'], 'z': ['s'],
-                        'eu': ['äu'], 'äu': ['eu'], // Beispiel für Diphthong
-                        'ei': ['ai'], 'ai': ['ei'],
-                        'sch': ['ch'], 'ch': ['sch'] // Beispiel für Mehrfachbuchstaben
-                    };
-
-                    let replaced = false;
-                    // Versuche zuerst, Mehrfachbuchstaben zu ersetzen
-                    const multiCharSubKeys = Object.keys(phoneticSubstitutions).filter(k => k.length > 1).sort((a, b) => b.length - a.length); // Längere zuerst
-                    for (const subKey of multiCharSubKeys) {
-                        const idx = word.toLowerCase().indexOf(subKey);
-                        if (idx !== -1) {
-                            const subs = phoneticSubstitutions[subKey];
-                            const newSub = subs[Math.floor(Math.random() * subs.length)];
-                            modifiedWord = word.substring(0, idx) + preserveCase(word.substring(idx, idx + subKey.length), newSub) + word.substring(idx + subKey.length);
-                            replaced = true;
-                            break;
-                        }
-                    }
-
-                    if (!replaced) { // Wenn keine Mehrfachbuchstaben ersetzt wurden, versuche einzelne
-                        for (let i = 0; i < chars.length; i++) {
-                            const charLower = chars[i].toLowerCase();
-                            if (phoneticSubstitutions[charLower]) {
-                                const subs = phoneticSubstitutions[charLower];
-                                const newChar = subs[Math.floor(Math.random() * subs.length)];
-                                chars[i] = preserveCase(chars[i], newChar);
-                                replaced = true;
-                                break; 
-                            }
-                        }
-                        if (replaced) modifiedWord = chars.join('');
-                    }
-                    
-                    if (!replaced && word.length > 0) {
-                        // Fallback: Wenn keine spezifische phonetische Substitution gefunden wird, versuche replacedLetter
-                        // Dies verhindert Endlosschleifen, wenn z.B. nur replacedLetter als Fallback aufgerufen wird.
-                        let tempWord = generateError(word, 'replacedLetter');
-                        if (tempWord !== word) { // Nur übernehmen, wenn es sich tatsächlich unterscheidet
-                            modifiedWord = tempWord;
-                            replaced = true;
-                        }
-                    }
-                    break;
-                case 'capitalization': // Groß- und Kleinschreibung: Anfangsbuchstaben verändert (z. B. Katze → katze)
-                    if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { // Nur wenn das erste Zeichen ein Buchstabe ist
-                        if (chars[0] === chars[0].toUpperCase()) {
-                            chars[0] = chars[0].toLowerCase();
-                        } else {
-                            chars[0] = chars[0].toUpperCase();
-                        }
-                        modifiedWord = chars.join('');
-                    }
-                    break;
-            }
-
-            // Sicherstellen, dass sich das Wort tatsächlich geändert hat, um triviale "Fehler" zu vermeiden
-            // und dass der Fehler nicht zu einem leeren String führt (außer bei missingLetter für 1-Buchstabe-Wörter).
-            // Wenn der Fehler nicht funktioniert hat oder zu leerem String führte,
-            // versuchen wir einen einfachen replacedLetter als Fallback,
-            // es sei denn, der Fehler war bereits replacedLetter.
-            if (modifiedWord === word || modifiedWord === "") {
-                if (word.length > 0 && errorType !== 'replacedLetter') {
-                     let fallbackWord = generateError(word, 'replacedLetter');
-                     if (fallbackWord !== word) { // Nur übernehmen, wenn der Fallback erfolgreich war
-                         return fallbackWord;
-                     }
-                }
-                return word; // Wenn auch Fallback nicht möglich, Originalwort zurückgeben
-            }
-            return modifiedWord;
-        }
-
-
-        // Die folgenden Funktionen bleiben unverändert, da sie mit der neuen Logik kompatibel sind.
-        function displayWords(words) { wordPool.innerHTML = ''; words.forEach(word => { const button = document.createElement('button'); button.textContent = word; button.classList.add('word-button'); button.addEventListener('click', () => handleWordClick(word, button)); wordPool.appendChild(button); }); }
-        function handleWordClick(word, button) { button.disabled = true; reconstructedWords.push(word); updateReconstructionDisplay(); checkSentence(); }
-        function updateReconstructionDisplay() { currentReconstruction.textContent = reconstructedWords.length > 0 ? reconstructedWords.join(' ') : '\u00A0'; }
-        
-        function checkSentence() { 
-            const reconstructed = reconstructedWords.join(' '); 
-            // Wichtig: `originalWords` enthält immer die korrekten Wörter für den Vergleich
-            const original = originalWords.slice(0, reconstructedWords.length).join(' '); 
-            
-            if (reconstructed !== original) { 
-                feedbackMessage.textContent = 'Das war nicht richtig. Versuch es nochmal!'; 
-                feedbackMessage.className = 'incorrect'; 
-                setTimeout(() => { 
-                    reconstructedWords = []; 
-                    updateReconstructionDisplay(); 
-                    feedbackMessage.textContent = ''; 
-                    document.querySelectorAll('.word-button').forEach(btn => btn.disabled = false); 
-                }, 1500); 
-            } else if (reconstructedWords.length === originalWords.length) { 
-                feedbackMessage.textContent = 'Super, das ist richtig!'; 
-                feedbackMessage.className = 'correct'; 
-                nextSentenceButton.style.display = 'inline-block'; 
-            } 
-        }
-
-        function loadNextSentence() { currentSentenceIndex++; loadSentence(currentSentenceIndex); }
-
-        // --- Sprachausgabe (unverändert) ---
-        
-        window.speechSynthesis.onvoiceschanged = () => {
-            const voices = window.speechSynthesis.getVoices();
-            germanVoice = voices.find(voice => voice.name === 'Google Deutsch' && voice.lang === 'de-DE') || voices.find(voice => voice.lang === 'de-DE');
+        // Spieler-Objekte initialisieren
+        player1 = {
+            id: 1,
+            score: 0,
+            reconstructedWords: [],
+            scoreEl: document.getElementById('p1-score'),
+            progressEl: document.getElementById('p1-progress'),
+            reconstructionEl: document.getElementById('p1-reconstruction'),
+            wordPoolEl: document.getElementById('p1-word-pool'),
+            feedbackEl: document.getElementById('p1-feedback')
         };
-        function playCurrentSentence() { if ('speechSynthesis' in window && allSentences.length > 0) { const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]); utterance.lang = 'de-DE'; utterance.rate = 0.9; if (germanVoice) utterance.voice = germanVoice; window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance); } }
-    </script>
+        player2 = {
+            id: 2,
+            score: 0,
+            reconstructedWords: [],
+            scoreEl: document.getElementById('p2-score'),
+            progressEl: document.getElementById('p2-progress'),
+            reconstructionEl: document.getElementById('p2-reconstruction'),
+            wordPoolEl: document.getElementById('p2-word-pool'),
+            feedbackEl: document.getElementById('p2-feedback')
+        };
+        
+        // Event-Listener
+        document.getElementById('play-audio-button').addEventListener('click', playCurrentSentence);
+        document.getElementById('next-sentence-button').addEventListener('click', loadNextTwoPlayerSentence);
+        document.getElementById('back-to-menu-button-game').addEventListener('click', showStartView);
+
+        showView(gameView);
+        loadTwoPlayerSentence(0);
+    }
+    
+    function loadTwoPlayerSentence(index) {
+        if (index >= allSentences.length) {
+            showTwoPlayerFinishView();
+            return;
+        }
+        
+        roundOver = false;
+        document.getElementById('next-sentence-button').style.display = 'none';
+
+        [player1, player2].forEach(p => {
+            p.reconstructedWords = [];
+            p.reconstructionEl.textContent = '\u00A0';
+            p.feedbackEl.textContent = '';
+            p.progressEl.textContent = `Satz ${index + 1} von ${allSentences.length}`;
+        });
+        
+        const currentSentence = allSentences[index];
+        originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
+        
+        const wordsForPool = generateWordPool(originalWords);
+        const shuffledWords = shuffleArray(wordsForPool);
+
+        displayWords(shuffledWords, player1.wordPoolEl, player1);
+        displayWords(shuffledWords, player2.wordPoolEl, player2);
+
+        playCurrentSentence();
+    }
+
+    function handleTwoPlayerWordClick(word, button, player) {
+        if (roundOver) return;
+        
+        button.disabled = true;
+        player.reconstructedWords.push(word);
+        player.reconstructionEl.textContent = player.reconstructedWords.join(' ');
+        checkTwoPlayerSentence(player);
+    }
+
+    function checkTwoPlayerSentence(player) {
+        const reconstructed = player.reconstructedWords.join(' ');
+        const original = originalWords.slice(0, player.reconstructedWords.length).join(' ');
+
+        if (reconstructed !== original) {
+            player.feedbackEl.textContent = 'Falsch!';
+            player.feedbackEl.className = 'feedback-message incorrect';
+            setTimeout(() => {
+                player.reconstructedWords = [];
+                player.reconstructionEl.textContent = '\u00A0';
+                player.feedbackEl.textContent = '';
+                // Nur die Buttons dieses Spielers wieder aktivieren
+                player.wordPoolEl.querySelectorAll('.word-button').forEach(btn => btn.disabled = false);
+            }, 1000);
+        } else if (player.reconstructedWords.length === originalWords.length) {
+            // Dieser Spieler hat die Runde gewonnen!
+            roundOver = true;
+            const winner = player;
+            const loser = (player.id === 1) ? player2 : player1;
+            
+            // Punkte für Gewinner
+            const roundPoints = originalWords.length;
+            winner.score += roundPoints;
+            winner.scoreEl.textContent = `Punkte: ${winner.score}`;
+            winner.feedbackEl.textContent = `Runde gewonnen! +${roundPoints} Punkte`;
+            winner.feedbackEl.className = 'feedback-message correct';
+
+            // Punkte für Verlierer berechnen
+            let loserPoints = 0;
+            for (let i = 0; i < loser.reconstructedWords.length; i++) {
+                if (loser.reconstructedWords[i] === originalWords[i]) {
+                    loserPoints++;
+                }
+            }
+            loser.score += loserPoints;
+            loser.scoreEl.textContent = `Punkte: ${loser.score}`;
+            loser.feedbackEl.textContent = `+${loserPoints} Punkte für richtige Wörter`;
+            loser.feedbackEl.className = 'feedback-message';
+
+            // Alle Wort-Buttons deaktivieren
+            document.querySelectorAll('.word-button').forEach(btn => btn.disabled = true);
+            document.getElementById('next-sentence-button').style.display = 'inline-block';
+        }
+    }
+    
+    function loadNextTwoPlayerSentence() {
+        currentSentenceIndex++;
+        loadTwoPlayerSentence(currentSentenceIndex);
+    }
+
+    function showTwoPlayerFinishView() {
+        let winnerText = '';
+        if (player1.score > player2.score) {
+            winnerText = 'Spieler 1 hat gewonnen!';
+        } else if (player2.score > player1.score) {
+            winnerText = 'Spieler 2 hat gewonnen!';
+        } else {
+            winnerText = 'Unentschieden!';
+        }
+
+        finishView.innerHTML = `
+            <h2>Spiel beendet!</h2>
+            <h3>${winnerText}</h3>
+            <p style="font-size: 1.2rem; margin: 10px 0;">Spieler 1: <strong>${player1.score}</strong> Punkte</p>
+            <p style="font-size: 1.2rem; margin: 10px 0;">Spieler 2: <strong>${player2.score}</strong> Punkte</p>
+            <button id="back-to-menu-button-finish" class="menu-button">Zurück zum Hauptmenü</button>
+        `;
+        document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
+        showView(finishView);
+    }
+
+
+    // ========= Geteilte Hilfsfunktionen =========
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Angepasst, um ein Ziel-Element und ggf. einen Spieler zu akzeptieren
+    function displayWords(words, targetElement, player = null) {
+        targetElement.innerHTML = '';
+        words.forEach(word => {
+            const button = document.createElement('button');
+            button.textContent = word;
+            button.classList.add('word-button');
+            button.addEventListener('click', () => {
+                if (gameMode === 'single') {
+                    handleSinglePlayerWordClick(word, button);
+                } else {
+                    handleTwoPlayerWordClick(word, button, player);
+                }
+            });
+            targetElement.appendChild(button);
+        });
+    }
+
+    function generateWordPool(correctWords) {
+        let pool = [...correctWords];
+        if (errorModeEnabled) {
+            const numWords = correctWords.length;
+            const numErrors = Math.min(selectedErrorFrequency, numWords);
+            let errorIndices = new Set();
+            while (errorIndices.size < numErrors) {
+                errorIndices.add(Math.floor(Math.random() * numWords));
+            }
+            errorIndices.forEach(index => {
+                const errorWord = generateError(correctWords[index], selectedErrorType);
+                if (errorWord && errorWord !== correctWords[index]) {
+                    pool.push(errorWord);
+                }
+            });
+        }
+        return pool;
+    }
+
+    function generateError(word, errorType) { /* ... Deine existierende generateError Funktion ... */ 
+        if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {return word;}
+        let modifiedWord = word; let chars = word.split('');
+        const preserveCase = (originalChar, newChar) => {if (!originalChar) return newChar; if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) { return newChar.toUpperCase(); } return newChar.toLowerCase(); };
+        switch (errorType) {
+            case 'missingLetter': if (chars.length > 1) { const indexToRemove = Math.floor(Math.random() * chars.length); chars.splice(indexToRemove, 1); modifiedWord = chars.join(''); } break;
+            case 'swappedLetters': if (chars.length > 1) { const index1 = Math.floor(Math.random() * (chars.length - 1)); const index2 = index1 + 1; [chars[index1], chars[index2]] = [chars[index2], chars[index1]]; modifiedWord = chars.join(''); } break;
+            case 'replacedLetter': if (chars.length > 0) { const indexToReplace = Math.floor(Math.random() * chars.length); const originalChar = chars[indexToReplace].toLowerCase(); const alphabet = 'abcdefghijklmnopqrstuvwxyzäöüß'; let replacementChar = originalChar; while (replacementChar === originalChar) { replacementChar = alphabet[Math.floor(Math.random() * alphabet.length)]; } chars[indexToReplace] = preserveCase(chars[indexToReplace], replacementChar); modifiedWord = chars.join(''); } break;
+            case 'duplicatedLetters': if (chars.length > 0) { const indexToDuplicate = Math.floor(Math.random() * chars.length); chars.splice(indexToDuplicate, 0, chars[indexToDuplicate]); modifiedWord = chars.join(''); } break;
+            case 'phoneticallySimilar': const subs = {'b':'p','p':'b','d':'t','t':'d','g':'k','k':'g','f':'v','v':'f','s':'z','z':'s'}; let replaced = false; for (let i=0; i<chars.length; i++) { const charLower = chars[i].toLowerCase(); if (subs[charLower]) { chars[i] = preserveCase(chars[i], subs[charLower]); replaced=true; break; } } if(replaced) modifiedWord = chars.join(''); else modifiedWord = generateError(word, 'replacedLetter'); break;
+            case 'capitalization': if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { if (chars[0] === chars[0].toUpperCase()) { chars[0] = chars[0].toLowerCase(); } else { chars[0] = chars[0].toUpperCase(); } modifiedWord = chars.join(''); } break;
+        }
+        return (modifiedWord !== word && modifiedWord !== "") ? modifiedWord : generateError(word, 'replacedLetter');
+    }
+
+    // ========= Sprachausgabe =========
+    window.speechSynthesis.onvoiceschanged = () => {
+        germanVoice = window.speechSynthesis.getVoices().find(v => v.lang === 'de-DE');
+    };
+    function playCurrentSentence() {
+        if ('speechSynthesis' in window && allSentences.length > 0) {
+            const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]);
+            utterance.lang = 'de-DE';
+            utterance.rate = 0.9;
+            if (germanVoice) utterance.voice = germanVoice;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+</script>
 </body>
 </html>
