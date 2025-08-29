@@ -71,6 +71,37 @@
         #feedback-message { margin-top: 15px; font-weight: bold; min-height: 24px; }
         #feedback-message.correct { color: #28a745; }
         #feedback-message.incorrect { color: #dc3545; }
+
+        /* ================== NEUE ANIMATION START ================== */
+        @keyframes flash-green {
+            0% {
+                background-color: #fafafa; /* Normale Hintergrundfarbe (für Einzelspieler) */
+                border-color: #d0d0d0;  /* Normale Randfarbe */
+            }
+            50% {
+                background-color: #d4edda; /* Heller Grünton */
+                border-color: #28a745;   /* Kräftiger grüner Rand */
+            }
+            100% {
+                background-color: #fafafa;
+                border-color: #d0d0d0;
+            }
+        }
+        .player-area .current-reconstruction { background-color: #fff; } /* Spezifische Hintergrundfarbe für 2-Spieler Modus */
+        @keyframes flash-green-player { /* Eigene Animation für 2-Spieler Modus wegen anderer Grundfarbe */
+             0% { background-color: #fff; border-color: #d0d0d0; }
+             50% { background-color: #d4edda; border-color: #28a745; }
+             100% { background-color: #fff; border-color: #d0d0d0; }
+        }
+
+        .flash-success {
+            animation: flash-green 0.8s ease-out;
+        }
+        .player-area .flash-success {
+            animation-name: flash-green-player; /* Überschreibt die Animation für Spieler-Boxen */
+        }
+        /* ================== NEUE ANIMATION ENDE =================== */
+
         .word-button { background-color: #6c757d; }
         .word-button:hover:not(:disabled) { background-color: #5a6268; }
         #play-audio-button { background-color: #17a2b8; }
@@ -130,13 +161,10 @@
                     <label for="auto-continue-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Automatisch weiter</label>
                 </div>
                 
-                <!-- ================== KORREKTUR START ================== -->
-                <!-- Dieser Container wurde versehentlich gelöscht und ist nun wieder da. -->
                 <div id="rounds-container">
                     <label for="rounds-input">Anzahl der Sätze:</label>
                     <input type="number" id="rounds-input" value="5" min="1" max="50">
                 </div>
-                <!-- ================== KORREKTUR ENDE =================== -->
             </div>
             <div class="settings-section">
                 <h3>Zufällige Reihenfolge</h3>
@@ -375,222 +403,4 @@
                 document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = false);
             }, 1500);
         } else if (reconstructedWords.length === originalWords.length) {
-            feedbackMessage.textContent = 'Super, das ist richtig!';
-            feedbackMessage.className = 'correct';
-            document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = true);
-
-            if (autoContinueEnabled) {
-                setTimeout(loadNextSinglePlayerSentence, 200);
-            } else {
-                document.getElementById('next-sentence-button').style.display = 'inline-block';
-            }
-        }
-    }
-
-    function loadNextSinglePlayerSentence() {
-        currentSentenceIndex++;
-        loadSinglePlayerSentence(currentSentenceIndex);
-    }
-
-    function showSinglePlayerFinishView() {
-        finishView.innerHTML = `<h2>Großartig!</h2><p>Du hast alle Sätze erfolgreich geübt.</p><button id="restart-button">Dieselbe Liste nochmal</button><button id="back-to-menu-button-finish" class="menu-button">Andere Liste wählen</button>`;
-        document.getElementById('restart-button').addEventListener('click', () => startGame(allSentences));
-        document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
-        showView(finishView);
-    }
-
-    function startTwoPlayerGame() {
-        appContainer.classList.add('two-player-mode');
-        gameView.innerHTML = `<div id="two-player-container"><div id="player2-area" class="player-area"><div class="player-header"><h2>Spieler 2</h2><div id="p2-score" class="score">Punkte: 0</div></div><div id="p2-progress" class="progress-indicator"></div><div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div><div id="p2-word-pool" class="word-pool"></div><button id="p2-play-audio-button" class="play-audio-button-player">Satz vorlesen</button><div id="p2-feedback" class="feedback-message"></div></div><div id="central-controls"><button id="next-sentence-button" style="display:none;">Nächster Satz</button><button id="end-game-button" class="menu-button">Spiel beenden</button></div><div id="player1-area" class="player-area"><div class="player-header"><h2>Spieler 1</h2><div id="p1-score" class="score">Punkte: 0</div></div><div id="p1-progress" class="progress-indicator"></div><div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div><div id="p1-word-pool" class="word-pool"></div><button id="p1-play-audio-button" class="play-audio-button-player">Satz vorlesen</button><div id="p1-feedback" class="feedback-message"></div></div></div>`;
-        player1 = { id: 1, score: 0, reconstructedWords: [], scoreEl: document.getElementById('p1-score'), progressEl: document.getElementById('p1-progress'), reconstructionEl: document.getElementById('p1-reconstruction'), wordPoolEl: document.getElementById('p1-word-pool'), feedbackEl: document.getElementById('p1-feedback') };
-        player2 = { id: 2, score: 0, reconstructedWords: [], scoreEl: document.getElementById('p2-score'), progressEl: document.getElementById('p2-progress'), reconstructionEl: document.getElementById('p2-reconstruction'), wordPoolEl: document.getElementById('p2-word-pool'), feedbackEl: document.getElementById('p2-feedback') };
-        document.getElementById('p1-play-audio-button').addEventListener('click', playCurrentSentence);
-        document.getElementById('p2-play-audio-button').addEventListener('click', playCurrentSentence);
-        document.getElementById('next-sentence-button').addEventListener('click', loadNextTwoPlayerSentence);
-        document.getElementById('end-game-button').addEventListener('click', showStartView);
-        showView(gameView);
-        loadTwoPlayerSentence(0);
-    }
-    
-    function loadTwoPlayerSentence(index) {
-        if (index >= allSentences.length) { showTwoPlayerFinishView(); return; }
-        roundOver = false;
-        document.getElementById('next-sentence-button').style.display = 'none';
-        [player1, player2].forEach(p => {
-            p.reconstructedWords = [];
-            p.reconstructionEl.textContent = '\u00A0';
-            p.feedbackEl.textContent = '';
-            p.progressEl.textContent = `Satz ${index + 1} von ${allSentences.length}`;
-        });
-        const currentSentence = allSentences[index];
-        originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
-        const wordsForPool = generateWordPool(originalWords);
-        const shuffledWords = shuffleArray(wordsForPool);
-        displayWords(shuffledWords, player1.wordPoolEl, player1);
-        displayWords(shuffledWords, player2.wordPoolEl, player2);
-        playCurrentSentence();
-    }
-
-    function handleTwoPlayerWordClick(word, button, player) {
-        if (roundOver) return;
-        button.disabled = true;
-        player.reconstructedWords.push(word);
-        player.reconstructionEl.textContent = player.reconstructedWords.join(' ');
-        checkTwoPlayerSentence(player);
-    }
-
-    function checkTwoPlayerSentence(player) {
-        if (roundOver) return;
-        const reconstructed = player.reconstructedWords.join(' ');
-        const original = originalWords.slice(0, player.reconstructedWords.length).join(' ');
-        if (reconstructed !== original) {
-            player.feedbackEl.textContent = 'Falsch!';
-            player.feedbackEl.className = 'feedback-message incorrect';
-            const playerButtons = player.wordPoolEl.querySelectorAll('.word-button');
-            setTimeout(() => {
-                if (!roundOver) { 
-                    player.reconstructedWords = [];
-                    player.reconstructionEl.textContent = '\u00A0';
-                    player.feedbackEl.textContent = '';
-                    playerButtons.forEach(btn => btn.disabled = false);
-                }
-            }, 1000);
-        } else if (player.reconstructedWords.length === originalWords.length) {
-            roundOver = true; 
-            const winner = player;
-            const loser = (player.id === 1) ? player2 : player1;
-            const roundPoints = originalWords.length;
-            winner.score += roundPoints;
-            winner.scoreEl.textContent = `Punkte: ${winner.score}`;
-            winner.feedbackEl.textContent = `Runde gewonnen! +${roundPoints} Punkte`;
-            winner.feedbackEl.className = 'feedback-message correct';
-            let loserPoints = 0;
-            for (let i = 0; i < loser.reconstructedWords.length; i++) {
-                if (loser.reconstructedWords[i] === originalWords[i]) {
-                    loserPoints++;
-                }
-            }
-            loser.score += loserPoints;
-            loser.scoreEl.textContent = `Punkte: ${loser.score}`;
-            loser.feedbackEl.textContent = `+${loserPoints} Punkte für richtige Wörter`;
-            loser.feedbackEl.className = 'feedback-message';
-            document.querySelectorAll('.word-button').forEach(btn => btn.disabled = true);
-            
-            if (autoContinueEnabled) {
-                setTimeout(loadNextTwoPlayerSentence, 200);
-            } else {
-                document.getElementById('next-sentence-button').style.display = 'inline-block';
-            }
-        }
-    }
-
-    function loadNextTwoPlayerSentence() {
-        currentSentenceIndex++;
-        loadTwoPlayerSentence(currentSentenceIndex);
-    }
-
-    function showTwoPlayerFinishView() {
-        let winnerText = '';
-        if (player1.score > player2.score) {
-            winnerText = 'Spieler 1 hat gewonnen!';
-        } else if (player2.score > player1.score) {
-            winnerText = 'Spieler 2 hat gewonnen!';
-        } else {
-            winnerText = 'Unentschieden!';
-        }
-        finishView.innerHTML = `<h2>Spiel beendet!</h2><h3>${winnerText}</h3><p style="font-size: 1.2rem; margin: 10px 0;">Spieler 1: <strong>${player1.score}</strong> Punkte</p><p style="font-size: 1.2rem; margin: 10px 0;">Spieler 2: <strong>${player2.score}</strong> Punkte</p><button id="back-to-menu-button-finish" class="menu-button">Zurück zum Hauptmenü</button>`;
-        document.getElementById('back-to-menu-button-finish').addEventListener('click', showStartView);
-        showView(finishView);
-    }
-    
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
-
-    function displayWords(words, targetElement, player = null) {
-        targetElement.innerHTML = '';
-        words.forEach(word => {
-            const button = document.createElement('button');
-            button.textContent = word;
-            button.classList.add('word-button');
-            const handleInteraction = (event) => {
-                event.preventDefault(); 
-                if (gameMode === 'single') {
-                    handleSinglePlayerWordClick(word, button);
-                } else {
-                    if (button.disabled) return; 
-                    handleTwoPlayerWordClick(word, button, player);
-                }
-            };
-            button.addEventListener('touchstart', handleInteraction);
-            button.addEventListener('click', handleInteraction);
-            targetElement.appendChild(button);
-        });
-    }
-
-    function generateWordPool(correctWords) {
-        let pool = [...correctWords];
-        if (errorModeEnabled) {
-            const numWords = correctWords.length;
-            const numErrors = Math.min(selectedErrorFrequency, numWords);
-            let errorIndices = new Set();
-            while (errorIndices.size < numErrors) {
-                errorIndices.add(Math.floor(Math.random() * numWords));
-            }
-            errorIndices.forEach(index => {
-                const errorWord = generateError(correctWords[index], selectedErrorType);
-                if (errorWord && errorWord !== correctWords[index]) {
-                    pool.push(errorWord);
-                }
-            });
-        }
-        return pool;
-    }
-
-    function generateError(word, errorType) { 
-        if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {return word;}
-        let modifiedWord = word; let chars = word.split('');
-        const preserveCase = (originalChar, newChar) => {if (!originalChar) return newChar; if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) { return newChar.toUpperCase(); } return newChar.toLowerCase(); };
-        switch (errorType) {
-            case 'missingLetter': if (chars.length > 1) { const indexToRemove = Math.floor(Math.random() * chars.length); chars.splice(indexToRemove, 1); modifiedWord = chars.join(''); } break;
-            case 'swappedLetters': if (chars.length > 1) { const index1 = Math.floor(Math.random() * (chars.length - 1)); const index2 = index1 + 1; [chars[index1], chars[index2]] = [chars[index2], chars[index1]]; modifiedWord = chars.join(''); } break;
-            case 'replacedLetter': if (chars.length > 0) { const indexToReplace = Math.floor(Math.random() * chars.length); const originalChar = chars[indexToReplace].toLowerCase(); const alphabet = 'abcdefghijklmnopqrstuvwxyzäöüß'; let replacementChar = originalChar; while (replacementChar === originalChar) { replacementChar = alphabet[Math.floor(Math.random() * alphabet.length)]; } chars[indexToReplace] = preserveCase(chars[indexToReplace], replacementChar); modifiedWord = chars.join(''); } break;
-            case 'duplicatedLetters': if (chars.length > 0) { const indexToDuplicate = Math.floor(Math.random() * chars.length); chars.splice(indexToDuplicate, 0, chars[indexToDuplicate]); modifiedWord = chars.join(''); } break;
-            case 'phoneticallySimilar': const subs = {'b':'p','p':'b','d':'t','t':'d','g':'k','k':'g','f':'v','v':'f','s':'z','z':'s'}; let replaced = false; for (let i=0; i<chars.length; i++) { const charLower = chars[i].toLowerCase(); if (subs[charLower]) { chars[i] = preserveCase(chars[i], subs[charLower]); replaced=true; break; } } if(replaced) modifiedWord = chars.join(''); else modifiedWord = generateError(word, 'replacedLetter'); break;
-            case 'capitalization': if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { if (chars[0] === chars[0].toUpperCase()) { chars[0] = chars[0].toLowerCase(); } else { chars[0] = chars[0].toUpperCase(); } modifiedWord = chars.join(''); } break;
-        }
-        if (modifiedWord === word || modifiedWord === "") { if (word.length > 0 && errorType !== 'replacedLetter') { let fallbackWord = generateError(word, 'replacedLetter'); if (fallbackWord !== word) { return fallbackWord; } } return word; } return modifiedWord;
-    }
-
-    window.speechSynthesis.onvoiceschanged = () => {
-        germanVoice = window.speechSynthesis.getVoices().find(v => v.lang === 'de-DE');
-    };
-
-    function playCurrentSentence() {
-        if ('speechSynthesis' in window && allSentences.length > 0) {
-            const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]);
-            utterance.lang = 'de-DE';
-            utterance.rate = 0.9;
-            if (germanVoice) utterance.voice = germanVoice;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(utterance);
-        }
-    }
-</script>
-
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => { console.log('Service Worker registriert:', registration); })
-                .catch(error => { console.log('Service Worker Registrierung fehlgeschlagen:', error); });
-        });
-    }
-</script>
-
-</body>
-</html>
+            feedbackMessage.textContent = 'Super, 
