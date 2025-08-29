@@ -4,25 +4,29 @@
       "id": "a1",
       "title": "Anfänger (A1)",
       "description": "Sehr einfache Sätze mit 3 bis 5 Wörtern. Perfekt für den Einstieg.",
-      "file": "lists/a1_sentences.json"
+      "file": "lists/a1_sentences.json",
+      "thema": "Wortschatz"
     },
     {
       "id": "b1",
       "title": "Fortgeschrittene (B1)",
       "description": "Längere Sätze mit komplexerem Satzbau.",
-      "file": "lists/b1_sentences.json"
+      "file": "lists/b1_sentences.json",
+      "thema": "Wortschatz"
     },
     {
       "id": "Klasse_2",
       "title": "2. Klasse",
       "description": "100 Sätze für die 2. Klasse.",
-      "file": "lists/Klasse_2.json"
+      "file": "lists/Klasse_2.json",
+      "thema": "2. Klasse"
     },
     {
       "id": "W-Fragen",
       "title": "W-Fragen",
       "description": "Sätze, die mit Fragewörtern wie Wer, Was, Wann, Wo beginnen.",
-      "file": "lists/W-Fragen.json"
+      "file": "lists/W-Fragen.json",
+      "thema": "Wortschatz"
     }
   ]
 }
