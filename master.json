@@ -27,6 +27,13 @@
       "description": "Sätze, die mit Fragewörtern wie Wer, Was, Wann, Wo beginnen.",
       "file": "lists/W-Fragen.json",
       "thema": "Wortschatz"
+    },
+    {
+      "id": "reime_1_lang",
+      "title": "Reime 1 (lange Sätze)",
+      "description": "Lange Sätze, die sich reimen.",
+      "file": "lists/Reime 1 lange Sätze.json",
+      "thema": "Reime"
     }
   ]
 }
