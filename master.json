@@ -34,6 +34,13 @@
       "description": "Lange Sätze, die sich reimen.",
       "file": "lists/Reime 1 lange Sätze.json",
       "thema": "Reime"
+    },
+    {
+      "id": "zitate_1",
+      "title": "Zitate 1",
+      "description": "Bekannte Zitate aus verschiedenen Bereichen.",
+      "file": "lists/Zitate 1.json",
+      "thema": "Zitate"
     }
   ]
 }
