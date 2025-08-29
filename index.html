@@ -55,10 +55,7 @@
         .view { display: none; }
         .view.active { display: block; }
         #game-view.active { display: flex; flex-direction: column; flex-grow: 1; }
-        .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; text-align: left; }
-        .list-item:hover { background-color: #e9ecef; border-color: #ced4da; }
-        .list-item h3 { margin: 0 0 5px 0; color: #007bff; }
-        .list-item p { margin: 0; color: #6c757d; font-size: 0.9rem; }
+       
         #loading-indicator { font-style: italic; color: #666; }
         button { padding: 12px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; transition: background-color 0.2s; }
         button:hover:not(:disabled) { background-color: #0056b3; }
@@ -74,32 +71,18 @@
 
         /* ================== ANIMATION FÜR ERFOLG START ================== */
         @keyframes flash-green {
-            0% {
-                background-color: #fafafa; /* Normale Hintergrundfarbe (für Einzelspieler) */
-                border-color: #d0d0d0;  /* Normale Randfarbe */
-            }
-            50% {
-                background-color: #d4edda; /* Heller Grünton */
-                border-color: #28a745;   /* Kräftiger grüner Rand */
-            }
-            100% {
-                background-color: #fafafa;
-                border-color: #d0d0d0;
-            }
+            0% { background-color: #fafafa; border-color: #d0d0d0; }
+            50% { background-color: #d4edda; border-color: #28a745; }
+            100% { background-color: #fafafa; border-color: #d0d0d0; }
         }
-        .player-area .current-reconstruction { background-color: #fff; } /* Spezifische Hintergrundfarbe für 2-Spieler Modus */
-        @keyframes flash-green-player { /* Eigene Animation für 2-Spieler Modus wegen anderer Grundfarbe */
+        .player-area .current-reconstruction { background-color: #fff; }
+        @keyframes flash-green-player {
              0% { background-color: #fff; border-color: #d0d0d0; }
              50% { background-color: #d4edda; border-color: #28a745; }
              100% { background-color: #fff; border-color: #d0d0d0; }
         }
-
-        .flash-success {
-            animation: flash-green 0.4s ease-out;
-        }
-        .player-area .flash-success {
-            animation-name: flash-green-player; /* Überschreibt die Animation für Spieler-Boxen */
-        }
+        .flash-success { animation: flash-green 0.4s ease-out; }
+        .player-area .flash-success { animation-name: flash-green-player; }
         /* ================== ANIMATION FÜR ERFOLG ENDE =================== */
 
         .word-button { background-color: #6c757d; }
@@ -137,6 +120,19 @@
         #error-frequency-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
         #error-frequency-slider { width: calc(100% - 70px); margin-right: 10px; vertical-align: middle; }
         #error-frequency-value { font-weight: bold; color: #007bff; display: inline-block; width: 20px; text-align: right; vertical-align: middle; }
+    
+        /* ========== NEUE STYLES FÜR LISTEN-AUSWAHL START ========== */
+        .list-selection-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+        .list-selection-controls select { flex-grow: 1; padding: 10px; font-size: 1rem; border-radius: 5px; border: 1px solid #ccc; }
+        .add-list-btn { padding: 10px 15px; font-size: 1.2rem; line-height: 1; background-color: #28a745; }
+        .add-list-btn:hover { background-color: #218838; }
+        #combined-lists-container { margin-top: 15px; text-align: left; }
+        .combined-list-item { background-color: #e9ecef; border-radius: 5px; padding: 10px 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .combined-list-item span { font-weight: bold; color: #495057; }
+        .remove-list-btn { background: none; border: none; font-size: 1.5rem; color: #dc3545; cursor: pointer; padding: 0 5px; }
+        .remove-list-btn:hover { color: #c82333; }
+        #start-game-btn { width: 100%; margin-top: 20px; padding: 15px; font-size: 1.2rem; }
+        /* ========== NEUE STYLES FÜR LISTEN-AUSWAHL ENDE ========== */
     </style>
 </head>
 <body>
@@ -145,7 +141,13 @@
         <h1>Interaktiver Lese-Trainer</h1>
 
         <div id="start-view" class="view active">
-            <h2>Wähle eine Satzliste zum Üben</h2>
+            <h2>Wähle eine oder mehrere Listen zum Üben</h2>
+            
+            <div id="list-selection-container" class="settings-section">
+                <p id="loading-indicator">Lade Listen...</p>
+                <!-- Dynamische Inhalte werden hier per JS eingefügt -->
+            </div>
+
             <div class="settings-section">
                 <h3>Spielmodus</h3>
                 <div class="game-mode-selection">
@@ -198,9 +200,6 @@
                     </div>
                 </div>
             </div>
-            <div id="list-selection-container" class="settings-section">
-                <p id="loading-indicator">Lade Listen...</p>
-            </div>
         </div>
 
         <div id="game-view" class="view"></div>
@@ -208,6 +207,7 @@
     </div>
 
 <script>
+    // Bestehende Konstanten und Variablen...
     const appContainer = document.getElementById('app-container');
     const mainTitle = document.querySelector('#app-container > h1');
     const startView = document.getElementById('start-view');
@@ -239,6 +239,10 @@
     let player1, player2;
     let roundOver = false;
     let autoContinueEnabled = false;
+
+    // NEUE Variablen für die Listen-Kombination
+    let masterLists = [];
+    let combinedLists = []; // Speichert die ausgewählten Listenobjekte
 
     document.addEventListener('DOMContentLoaded', () => {
         loadMasterList();
@@ -296,6 +300,8 @@
         autoContinueEnabled = false;
         allSentences = [];
         currentSentenceIndex = 0;
+        combinedLists = []; // Kombinierte Listen zurücksetzen
+        populateListSelection(masterLists); // Auswahlmenüs neu aufbauen
         showView(startView);
     }
     
@@ -304,36 +310,156 @@
             const response = await fetch('master.json');
             if (!response.ok) throw new Error('Netzwerkfehler');
             const data = await response.json();
-            populateListSelection(data.lists);
+            masterLists = data.lists; // Speichere die Listen für später
+            populateListSelection(masterLists);
         } catch (error) {
             loadingIndicator.textContent = 'Fehler beim Laden der Satzlisten.';
         }
     }
 
+    // ================== NEUE FUNKTIONEN FÜR LISTEN-AUSWAHL START ==================
+    
     function populateListSelection(lists) {
-        listSelectionContainer.innerHTML = '<h3>Wähle eine Liste</h3>';
+        listSelectionContainer.innerHTML = ''; // Vorherigen Inhalt löschen
+
+        // 1. Datenstruktur für Themen erstellen
+        const themedLists = {
+            "1. Klasse": [], "2. Klasse": [], "3. Klasse": [], "4. Klasse": [], "5. Klasse": [],
+            "Orthografie": [], "Artikulation": [], "Wortschatz": [], "Zitate der Weltliteratur": []
+        };
         lists.forEach(list => {
-            const item = document.createElement('div');
-            item.className = 'list-item';
-            item.innerHTML = `<h4>${list.title}</h4><p>${list.description}</p>`;
-            item.addEventListener('click', async () => {
-                try {
-                    const response = await fetch(list.file);
-                    if (!response.ok) throw new Error(`Datei nicht gefunden.`);
-                    const sentenceData = await response.json();
-                    startGame(sentenceData.sentences);
-                } catch (error) {
-                    alert(`Fehler: ${error.message}`);
-                }
-            });
-            listSelectionContainer.appendChild(item);
+            if (themedLists[list.thema]) {
+                themedLists[list.thema].push(list);
+            }
         });
+
+        // 2. HTML-Struktur aufbauen
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'list-selection-controls';
+        
+        const themeSelect = document.createElement('select');
+        themeSelect.id = 'theme-select';
+        
+        const listSelect = document.createElement('select');
+        listSelect.id = 'list-select';
+        
+        const addButton = document.createElement('button');
+        addButton.textContent = '+';
+        addButton.className = 'add-list-btn';
+        addButton.title = 'Liste zur Auswahl hinzufügen';
+
+        controlsDiv.appendChild(themeSelect);
+        controlsDiv.appendChild(listSelect);
+        controlsDiv.appendChild(addButton);
+        
+        const combinedContainer = document.createElement('div');
+        combinedContainer.id = 'combined-lists-container';
+
+        const startButton = document.createElement('button');
+        startButton.id = 'start-game-btn';
+        startButton.textContent = 'Spiel starten';
+        startButton.disabled = true;
+
+        listSelectionContainer.appendChild(controlsDiv);
+        listSelectionContainer.appendChild(combinedContainer);
+        listSelectionContainer.appendChild(startButton);
+
+        // 3. Themen-Dropdown füllen
+        Object.keys(themedLists).forEach(theme => {
+            if (themedLists[theme].length > 0) { // Nur Themen mit Listen anzeigen
+                const option = document.createElement('option');
+                option.value = theme;
+                option.textContent = theme;
+                themeSelect.appendChild(option);
+            }
+        });
+        
+        // 4. Funktion zum Aktualisieren des Listen-Dropdowns
+        function updateListDropdown() {
+            const selectedTheme = themeSelect.value;
+            listSelect.innerHTML = '';
+            themedLists[selectedTheme].forEach(list => {
+                const option = document.createElement('option');
+                option.value = list.file; // Eindeutiger Wert
+                option.textContent = list.title;
+                listSelect.appendChild(option);
+            });
+        }
+
+        // 5. Event-Listener
+        themeSelect.addEventListener('change', updateListDropdown);
+        addButton.addEventListener('click', addListToCombination);
+        startButton.addEventListener('click', () => {
+            // Sätze aus kombinierten Listen laden und Spiel starten
+            loadCombinedSentencesAndStart();
+        });
+
+        // Initiales Füllen
+        updateListDropdown();
         loadingIndicator.style.display = 'none';
+        updateCombinedListsDisplay(); // Stellt sicher, dass der Start-Button-Zustand korrekt ist
     }
+
+    function addListToCombination() {
+        const listSelect = document.getElementById('list-select');
+        const selectedFile = listSelect.value;
+
+        // Prüfen, ob die Liste bereits hinzugefügt wurde
+        if (!combinedLists.some(list => list.file === selectedFile)) {
+            const listToAdd = masterLists.find(list => list.file === selectedFile);
+            if (listToAdd) {
+                combinedLists.push(listToAdd);
+                updateCombinedListsDisplay();
+            }
+        }
+    }
+
+    function removeListFromCombination(file) {
+        combinedLists = combinedLists.filter(list => list.file !== file);
+        updateCombinedListsDisplay();
+    }
+
+    function updateCombinedListsDisplay() {
+        const container = document.getElementById('combined-lists-container');
+        const startButton = document.getElementById('start-game-btn');
+        container.innerHTML = '';
+
+        if (combinedLists.length === 0) {
+            container.innerHTML = '<p>Noch keine Listen ausgewählt.</p>';
+            startButton.disabled = true;
+        } else {
+            combinedLists.forEach(list => {
+                const item = document.createElement('div');
+                item.className = 'combined-list-item';
+                item.innerHTML = `
+                    <span>${list.title}</span>
+                    <button class="remove-list-btn" title="Liste entfernen" onclick="removeListFromCombination('${list.file}')">&times;</button>
+                `;
+                container.appendChild(item);
+            });
+            startButton.disabled = false;
+        }
+    }
+    
+    async function loadCombinedSentencesAndStart() {
+        let allCombinedSentences = [];
+        try {
+            for (const list of combinedLists) {
+                const response = await fetch(list.file);
+                if (!response.ok) throw new Error(`Datei ${list.file} nicht gefunden.`);
+                const sentenceData = await response.json();
+                allCombinedSentences = allCombinedSentences.concat(sentenceData.sentences);
+            }
+            startGame(allCombinedSentences);
+        } catch (error) {
+            alert(`Fehler beim Laden der Sätze: ${error.message}`);
+        }
+    }
+    // ================== NEUE FUNKTIONEN FÜR LISTEN-AUSWAHL ENDE ===================
 
     function startGame(sentences) {
         if (!sentences || sentences.length === 0) {
-            alert('Diese Liste enthält keine Sätze.');
+            alert('Diese Liste(n) enthalten keine Sätze.');
             return;
         }
         allSentences = randomOrderEnabled ? shuffleArray([...sentences]) : sentences;
@@ -353,7 +479,10 @@
             startTwoPlayerGame();
         }
     }
-
+    
+    // ... Der Rest deines JavaScript-Codes bleibt unverändert ...
+    // (startSinglePlayerGame, loadSinglePlayerSentence, etc.)
+    
     function startSinglePlayerGame() {
         appContainer.classList.remove('two-player-mode');
         gameView.innerHTML = `<div class="single-player-game"><div id="progress-indicator"></div><p>Höre gut zu und baue den Satz nach.</p><div id="current-reconstruction">&nbsp;</div><div id="word-pool"></div><div id="feedback-message"></div><button id="play-audio-button">Satz vorlesen</button><button id="next-sentence-button">Nächster Satz</button><br><button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button></div>`;
@@ -414,7 +543,7 @@
             }, { once: true });
 
             if (autoContinueEnabled) {
-                setTimeout(loadNextSinglePlayerSentence, 200);
+                setTimeout(loadNextSinglePlayerSentence, 2000);
             } else {
                 document.getElementById('next-sentence-button').style.display = 'inline-block';
             }
@@ -516,7 +645,7 @@
             }, { once: true });
 
             if (autoContinueEnabled) {
-                setTimeout(loadNextTwoPlayerSentence, 200);
+                setTimeout(loadNextTwoPlayerSentence, 2000);
             } else {
                 document.getElementById('next-sentence-button').style.display = 'inline-block';
             }
@@ -596,11 +725,7 @@
         const preserveCase = (originalChar, newChar) => {if (!originalChar) return newChar; if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) { return newChar.toUpperCase(); } return newChar.toLowerCase(); };
         switch (errorType) {
             case 'missingLetter': if (chars.length > 1) { const indexToRemove = Math.floor(Math.random() * chars.length); chars.splice(indexToRemove, 1); modifiedWord = chars.join(''); } break;
-            
-            // ================== KORREKTUR START ==================
             case 'swappedLetters': if (chars.length > 1) { const index1 = Math.floor(Math.random() * (chars.length - 1)); const index2 = index1 + 1; [chars[index1], chars[index2]] = [chars[index2], chars[index1]]; modifiedWord = chars.join(''); } break;
-            // ================== KORREKTUR ENDE ===================
-
             case 'replacedLetter': if (chars.length > 0) { const indexToReplace = Math.floor(Math.random() * chars.length); const originalChar = chars[indexToReplace].toLowerCase(); const alphabet = 'abcdefghijklmnopqrstuvwxyzäöüß'; let replacementChar = originalChar; while (replacementChar === originalChar) { replacementChar = alphabet[Math.floor(Math.random() * alphabet.length)]; } chars[indexToReplace] = preserveCase(chars[indexToReplace], replacementChar); modifiedWord = chars.join(''); } break;
             case 'duplicatedLetters': if (chars.length > 0) { const indexToDuplicate = Math.floor(Math.random() * chars.length); chars.splice(indexToDuplicate, 0, chars[indexToDuplicate]); modifiedWord = chars.join(''); } break;
             case 'phoneticallySimilar': const subs = {'b':'p','p':'b','d':'t','t':'d','g':'k','k':'g','f':'v','v':'f','s':'z','z':'s'}; let replaced = false; for (let i=0; i<chars.length; i++) { const charLower = chars[i].toLowerCase(); if (subs[charLower]) { chars[i] = preserveCase(chars[i], subs[charLower]); replaced=true; break; } } if(replaced) modifiedWord = chars.join(''); else modifiedWord = generateError(word, 'replacedLetter'); break;
