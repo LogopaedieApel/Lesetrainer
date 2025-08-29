@@ -2,25 +2,17 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    
-    <!-- ANPASSUNG: viewport-fit=cover für korrekte Nutzung der Safe Area auf iOS/PWA-Geräten -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
-    
-    <!-- ============= PWA-ERGÄNZUNGEN START ============= -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
-    <!-- Für iOS-Geräte -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lese-Trainer">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <!-- ============= PWA-ERGÄNZUNGEN ENDE ============= -->
 
     <title>Interaktiver Lese-Trainer</title>
     <style>
-        /* ANPASSUNG: touch-action: none; hier entfernt, da es jetzt konditionell im Body gesetzt wird */
         html, body { height: 100%; margin: 0; padding: 0; } 
-        
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: #f0f2f5; 
@@ -28,26 +20,13 @@
             justify-content: center; 
             align-items: center; 
             box-sizing: border-box; 
-            /* ANPASSUNG: Safe Area Padding und ursprüngliche 20px hinzufügen */
             padding-top: calc(20px + env(safe-area-inset-top, 0px));
             padding-right: calc(20px + env(safe-area-inset-right, 0px));
             padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
             padding-left: calc(20px + env(safe-area-inset-left, 0px));
         }
-
-        /* NEUE REGELN FÜR KONDITIONELLES SCROLLEN */
-        body.start-view-active {
-            align-items: flex-start; 
-            overflow-y: auto;
-            touch-action: pan-y;
-        }
-        body.game-view-active, body.finish-view-active {
-            align-items: center;
-            overflow: hidden;
-            touch-action: none;
-        }
-        /* ENDE NEUE REGELN */
-
+        body.start-view-active { align-items: flex-start; overflow-y: auto; touch-action: pan-y; }
+        body.game-view-active, body.finish-view-active { align-items: center; overflow: hidden; touch-action: none; }
         #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; transition: max-width 0.3s ease, min-height 0.3s ease; }
         body.fullscreen-mode { padding: 0; }
         #app-container.two-player-mode { max-width: 100%; height: 100%; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
@@ -55,7 +34,10 @@
         .view { display: none; }
         .view.active { display: block; }
         #game-view.active { display: flex; flex-direction: column; flex-grow: 1; }
-       
+        .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; text-align: left; }
+        .list-item:hover { background-color: #e9ecef; border-color: #ced4da; }
+        .list-item h3 { margin: 0 0 5px 0; color: #007bff; }
+        .list-item p { margin: 0; color: #6c757d; font-size: 0.9rem; }
         #loading-indicator { font-style: italic; color: #666; }
         button { padding: 12px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; transition: background-color 0.2s; }
         button:hover:not(:disabled) { background-color: #0056b3; }
@@ -68,8 +50,6 @@
         #feedback-message { margin-top: 15px; font-weight: bold; min-height: 24px; }
         #feedback-message.correct { color: #28a745; }
         #feedback-message.incorrect { color: #dc3545; }
-
-        /* ================== ANIMATION FÜR ERFOLG START ================== */
         @keyframes flash-green {
             0% { background-color: #fafafa; border-color: #d0d0d0; }
             50% { background-color: #d4edda; border-color: #28a745; }
@@ -81,10 +61,8 @@
              50% { background-color: #d4edda; border-color: #28a745; }
              100% { background-color: #fff; border-color: #d0d0d0; }
         }
-        .flash-success { animation: flash-green 0.4s ease-out; }
+        .flash-success { animation: flash-green 0.5s ease-out; }
         .player-area .flash-success { animation-name: flash-green-player; }
-        /* ================== ANIMATION FÜR ERFOLG ENDE =================== */
-
         .word-button { background-color: #6c757d; }
         .word-button:hover:not(:disabled) { background-color: #5a6268; }
         #play-audio-button { background-color: #17a2b8; }
@@ -120,19 +98,28 @@
         #error-frequency-container { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
         #error-frequency-slider { width: calc(100% - 70px); margin-right: 10px; vertical-align: middle; }
         #error-frequency-value { font-weight: bold; color: #007bff; display: inline-block; width: 20px; text-align: right; vertical-align: middle; }
-    
-        /* ========== NEUE STYLES FÜR LISTEN-AUSWAHL START ========== */
-        .list-selection-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
-        .list-selection-controls select { flex-grow: 1; padding: 10px; font-size: 1rem; border-radius: 5px; border: 1px solid #ccc; }
-        .add-list-btn { padding: 10px 15px; font-size: 1.2rem; line-height: 1; background-color: #28a745; }
-        .add-list-btn:hover { background-color: #218838; }
-        #combined-lists-container { margin-top: 15px; text-align: left; }
-        .combined-list-item { background-color: #e9ecef; border-radius: 5px; padding: 10px 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .combined-list-item span { font-weight: bold; color: #495057; }
-        .remove-list-btn { background: none; border: none; font-size: 1.5rem; color: #dc3545; cursor: pointer; padding: 0 5px; }
-        .remove-list-btn:hover { color: #c82333; }
-        #start-game-btn { width: 100%; margin-top: 20px; padding: 15px; font-size: 1.2rem; }
-        /* ========== NEUE STYLES FÜR LISTEN-AUSWAHL ENDE ========== */
+        
+        /* ================== NEUES RESPONSIVES LAYOUT START ================== */
+        @media (min-width: 800px) {
+            #settings-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Zwei gleich breite Spalten */
+                gap: 20px 40px; /* 20px Abstand oben/unten, 40px links/rechts */
+                align-items: start; /* Stellt sicher, dass die Boxen oben bündig sind */
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #e0e0e0;
+            }
+            #settings-grid .settings-section {
+                margin-top: 0;
+                padding-top: 0;
+                border-top: none;
+            }
+            #settings-grid .settings-section:nth-child(3) {
+                grid-column: 1 / -1;
+            }
+        }
+        /* ================== NEUES RESPONSIVES LAYOUT ENDE =================== */
     </style>
 </head>
 <body>
@@ -141,64 +128,65 @@
         <h1>Interaktiver Lese-Trainer</h1>
 
         <div id="start-view" class="view active">
-            <h2>Wähle eine oder mehrere Listen zum Üben</h2>
+            <h2>Wähle eine Satzliste zum Üben</h2>
+
+            <!-- ================== NEUER WRAPPER START ================== -->
+            <div id="settings-grid">
+                <div class="settings-section">
+                    <h3>Spielmodus</h3>
+                    <div class="game-mode-selection">
+                        <label><input type="radio" name="gameMode" value="single" checked> Einzelspieler</label>
+                        <label><input type="radio" name="gameMode" value="two-player"> Zwei Spieler</label>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label class="switch">
+                            <input type="checkbox" id="auto-continue-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <label for="auto-continue-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Automatisch weiter</label>
+                    </div>
+                    <div id="rounds-container">
+                        <label for="rounds-input">Anzahl der Sätze:</label>
+                        <input type="number" id="rounds-input" value="5" min="1" max="50">
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Zufällige Reihenfolge</h3>
+                    <label class="switch">
+                        <input type="checkbox" id="random-order-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                    <label for="random-order-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Sätze randomisieren</label>
+                </div>
+                <div class="settings-section">
+                    <h3>Fehler-Modus (Optional)</h3>
+                    <label class="switch">
+                        <input type="checkbox" id="error-mode-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <label for="error-mode-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Fehler aktivieren</label>
+                    <div id="error-type-selection" style="display: none; margin-top: 15px;">
+                        <h4>Fehlerart auswählen:</h4>
+                         <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label><input type="radio" name="errorType" value="missingLetter" checked> Buchstabe fehlt</label>
+                            <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht</label>
+                            <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe</label>
+                            <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben</label>
+                            <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben</label>
+                            <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung</label>
+                        </div>
+                        <div id="error-frequency-container">
+                            <h4>Fehlerhäufigkeit pro Satz:</h4>
+                            <input type="range" id="error-frequency-slider" min="1" max="5" value="1">
+                            <span id="error-frequency-value">1</span> Fehler
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ================== NEUER WRAPPER ENDE =================== -->
             
             <div id="list-selection-container" class="settings-section">
                 <p id="loading-indicator">Lade Listen...</p>
-                <!-- Dynamische Inhalte werden hier per JS eingefügt -->
-            </div>
-
-            <div class="settings-section">
-                <h3>Spielmodus</h3>
-                <div class="game-mode-selection">
-                    <label><input type="radio" name="gameMode" value="single" checked> Einzelspieler</label>
-                    <label><input type="radio" name="gameMode" value="two-player"> Zwei Spieler</label>
-                </div>
-                
-                <div style="margin-top: 15px;">
-                    <label class="switch">
-                        <input type="checkbox" id="auto-continue-toggle">
-                        <span class="slider round"></span>
-                    </label>
-                    <label for="auto-continue-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Automatisch weiter</label>
-                </div>
-                
-                <div id="rounds-container">
-                    <label for="rounds-input">Anzahl der Sätze:</label>
-                    <input type="number" id="rounds-input" value="5" min="1" max="50">
-                </div>
-            </div>
-            <div class="settings-section">
-                <h3>Zufällige Reihenfolge</h3>
-                <label class="switch">
-                    <input type="checkbox" id="random-order-toggle" checked>
-                    <span class="slider round"></span>
-                </label>
-                <label for="random-order-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Sätze randomisieren</label>
-            </div>
-            <div class="settings-section">
-                <h3>Fehler-Modus (Optional)</h3>
-                <label class="switch">
-                    <input type="checkbox" id="error-mode-toggle">
-                    <span class="slider round"></span>
-                </label>
-                <label for="error-mode-toggle" style="margin-left: 10px; font-weight: bold; vertical-align: middle;">Fehler aktivieren</label>
-                <div id="error-type-selection" style="display: none; margin-top: 15px;">
-                    <h4>Fehlerart auswählen:</h4>
-                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label><input type="radio" name="errorType" value="missingLetter" checked> Buchstabe fehlt</label>
-                        <label><input type="radio" name="errorType" value="swappedLetters"> Buchstaben vertauscht</label>
-                        <label><input type="radio" name="errorType" value="replacedLetter"> Falscher Buchstabe</label>
-                        <label><input type="radio" name="errorType" value="duplicatedLetters"> Doppelte Buchstaben</label>
-                        <label><input type="radio" name="errorType" value="phoneticallySimilar"> Phonetisch ähnliche Buchstaben</label>
-                        <label><input type="radio" name="errorType" value="capitalization"> Groß-/Kleinschreibung</label>
-                    </div>
-                    <div id="error-frequency-container">
-                        <h4>Fehlerhäufigkeit pro Satz:</h4>
-                        <input type="range" id="error-frequency-slider" min="1" max="5" value="1">
-                        <span id="error-frequency-value">1</span> Fehler
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -207,7 +195,7 @@
     </div>
 
 <script>
-    // Bestehende Konstanten und Variablen...
+    // Der JavaScript-Teil bleibt unverändert
     const appContainer = document.getElementById('app-container');
     const mainTitle = document.querySelector('#app-container > h1');
     const startView = document.getElementById('start-view');
@@ -239,10 +227,6 @@
     let player1, player2;
     let roundOver = false;
     let autoContinueEnabled = false;
-
-    // NEUE Variablen für die Listen-Kombination
-    let masterLists = [];
-    let combinedLists = []; // Speichert die ausgewählten Listenobjekte
 
     document.addEventListener('DOMContentLoaded', () => {
         loadMasterList();
@@ -300,8 +284,6 @@
         autoContinueEnabled = false;
         allSentences = [];
         currentSentenceIndex = 0;
-        combinedLists = []; // Kombinierte Listen zurücksetzen
-        populateListSelection(masterLists); // Auswahlmenüs neu aufbauen
         showView(startView);
     }
     
@@ -310,156 +292,36 @@
             const response = await fetch('master.json');
             if (!response.ok) throw new Error('Netzwerkfehler');
             const data = await response.json();
-            masterLists = data.lists; // Speichere die Listen für später
-            populateListSelection(masterLists);
+            populateListSelection(data.lists);
         } catch (error) {
             loadingIndicator.textContent = 'Fehler beim Laden der Satzlisten.';
         }
     }
 
-    // ================== NEUE FUNKTIONEN FÜR LISTEN-AUSWAHL START ==================
-    
     function populateListSelection(lists) {
-        listSelectionContainer.innerHTML = ''; // Vorherigen Inhalt löschen
-
-        // 1. Datenstruktur für Themen erstellen
-        const themedLists = {
-            "1. Klasse": [], "2. Klasse": [], "3. Klasse": [], "4. Klasse": [], "5. Klasse": [],
-            "Orthografie": [], "Artikulation": [], "Wortschatz": [], "Zitate der Weltliteratur": []
-        };
+        listSelectionContainer.innerHTML = '<h3>Wähle eine Liste</h3>';
         lists.forEach(list => {
-            if (themedLists[list.thema]) {
-                themedLists[list.thema].push(list);
-            }
-        });
-
-        // 2. HTML-Struktur aufbauen
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'list-selection-controls';
-        
-        const themeSelect = document.createElement('select');
-        themeSelect.id = 'theme-select';
-        
-        const listSelect = document.createElement('select');
-        listSelect.id = 'list-select';
-        
-        const addButton = document.createElement('button');
-        addButton.textContent = '+';
-        addButton.className = 'add-list-btn';
-        addButton.title = 'Liste zur Auswahl hinzufügen';
-
-        controlsDiv.appendChild(themeSelect);
-        controlsDiv.appendChild(listSelect);
-        controlsDiv.appendChild(addButton);
-        
-        const combinedContainer = document.createElement('div');
-        combinedContainer.id = 'combined-lists-container';
-
-        const startButton = document.createElement('button');
-        startButton.id = 'start-game-btn';
-        startButton.textContent = 'Spiel starten';
-        startButton.disabled = true;
-
-        listSelectionContainer.appendChild(controlsDiv);
-        listSelectionContainer.appendChild(combinedContainer);
-        listSelectionContainer.appendChild(startButton);
-
-        // 3. Themen-Dropdown füllen
-        Object.keys(themedLists).forEach(theme => {
-            if (themedLists[theme].length > 0) { // Nur Themen mit Listen anzeigen
-                const option = document.createElement('option');
-                option.value = theme;
-                option.textContent = theme;
-                themeSelect.appendChild(option);
-            }
-        });
-        
-        // 4. Funktion zum Aktualisieren des Listen-Dropdowns
-        function updateListDropdown() {
-            const selectedTheme = themeSelect.value;
-            listSelect.innerHTML = '';
-            themedLists[selectedTheme].forEach(list => {
-                const option = document.createElement('option');
-                option.value = list.file; // Eindeutiger Wert
-                option.textContent = list.title;
-                listSelect.appendChild(option);
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `<h4>${list.title}</h4><p>${list.description}</p>`;
+            item.addEventListener('click', async () => {
+                try {
+                    const response = await fetch(list.file);
+                    if (!response.ok) throw new Error(`Datei nicht gefunden.`);
+                    const sentenceData = await response.json();
+                    startGame(sentenceData.sentences);
+                } catch (error) {
+                    alert(`Fehler: ${error.message}`);
+                }
             });
-        }
-
-        // 5. Event-Listener
-        themeSelect.addEventListener('change', updateListDropdown);
-        addButton.addEventListener('click', addListToCombination);
-        startButton.addEventListener('click', () => {
-            // Sätze aus kombinierten Listen laden und Spiel starten
-            loadCombinedSentencesAndStart();
+            listSelectionContainer.appendChild(item);
         });
-
-        // Initiales Füllen
-        updateListDropdown();
         loadingIndicator.style.display = 'none';
-        updateCombinedListsDisplay(); // Stellt sicher, dass der Start-Button-Zustand korrekt ist
     }
-
-    function addListToCombination() {
-        const listSelect = document.getElementById('list-select');
-        const selectedFile = listSelect.value;
-
-        // Prüfen, ob die Liste bereits hinzugefügt wurde
-        if (!combinedLists.some(list => list.file === selectedFile)) {
-            const listToAdd = masterLists.find(list => list.file === selectedFile);
-            if (listToAdd) {
-                combinedLists.push(listToAdd);
-                updateCombinedListsDisplay();
-            }
-        }
-    }
-
-    function removeListFromCombination(file) {
-        combinedLists = combinedLists.filter(list => list.file !== file);
-        updateCombinedListsDisplay();
-    }
-
-    function updateCombinedListsDisplay() {
-        const container = document.getElementById('combined-lists-container');
-        const startButton = document.getElementById('start-game-btn');
-        container.innerHTML = '';
-
-        if (combinedLists.length === 0) {
-            container.innerHTML = '<p>Noch keine Listen ausgewählt.</p>';
-            startButton.disabled = true;
-        } else {
-            combinedLists.forEach(list => {
-                const item = document.createElement('div');
-                item.className = 'combined-list-item';
-                item.innerHTML = `
-                    <span>${list.title}</span>
-                    <button class="remove-list-btn" title="Liste entfernen" onclick="removeListFromCombination('${list.file}')">&times;</button>
-                `;
-                container.appendChild(item);
-            });
-            startButton.disabled = false;
-        }
-    }
-    
-    async function loadCombinedSentencesAndStart() {
-        let allCombinedSentences = [];
-        try {
-            for (const list of combinedLists) {
-                const response = await fetch(list.file);
-                if (!response.ok) throw new Error(`Datei ${list.file} nicht gefunden.`);
-                const sentenceData = await response.json();
-                allCombinedSentences = allCombinedSentences.concat(sentenceData.sentences);
-            }
-            startGame(allCombinedSentences);
-        } catch (error) {
-            alert(`Fehler beim Laden der Sätze: ${error.message}`);
-        }
-    }
-    // ================== NEUE FUNKTIONEN FÜR LISTEN-AUSWAHL ENDE ===================
 
     function startGame(sentences) {
         if (!sentences || sentences.length === 0) {
-            alert('Diese Liste(n) enthalten keine Sätze.');
+            alert('Diese Liste enthält keine Sätze.');
             return;
         }
         allSentences = randomOrderEnabled ? shuffleArray([...sentences]) : sentences;
@@ -479,10 +341,7 @@
             startTwoPlayerGame();
         }
     }
-    
-    // ... Der Rest deines JavaScript-Codes bleibt unverändert ...
-    // (startSinglePlayerGame, loadSinglePlayerSentence, etc.)
-    
+
     function startSinglePlayerGame() {
         appContainer.classList.remove('two-player-mode');
         gameView.innerHTML = `<div class="single-player-game"><div id="progress-indicator"></div><p>Höre gut zu und baue den Satz nach.</p><div id="current-reconstruction">&nbsp;</div><div id="word-pool"></div><div id="feedback-message"></div><button id="play-audio-button">Satz vorlesen</button><button id="next-sentence-button">Nächster Satz</button><br><button id="back-to-menu-button-game" class="menu-button">Zurück zum Menü</button></div>`;
@@ -543,7 +402,7 @@
             }, { once: true });
 
             if (autoContinueEnabled) {
-                setTimeout(loadNextSinglePlayerSentence, 2000);
+                setTimeout(loadNextSinglePlayerSentence, 700);
             } else {
                 document.getElementById('next-sentence-button').style.display = 'inline-block';
             }
@@ -645,7 +504,7 @@
             }, { once: true });
 
             if (autoContinueEnabled) {
-                setTimeout(loadNextTwoPlayerSentence, 2000);
+                setTimeout(loadNextTwoPlayerSentence, 1000);
             } else {
                 document.getElementById('next-sentence-button').style.display = 'inline-block';
             }
@@ -729,36 +588,4 @@
             case 'replacedLetter': if (chars.length > 0) { const indexToReplace = Math.floor(Math.random() * chars.length); const originalChar = chars[indexToReplace].toLowerCase(); const alphabet = 'abcdefghijklmnopqrstuvwxyzäöüß'; let replacementChar = originalChar; while (replacementChar === originalChar) { replacementChar = alphabet[Math.floor(Math.random() * alphabet.length)]; } chars[indexToReplace] = preserveCase(chars[indexToReplace], replacementChar); modifiedWord = chars.join(''); } break;
             case 'duplicatedLetters': if (chars.length > 0) { const indexToDuplicate = Math.floor(Math.random() * chars.length); chars.splice(indexToDuplicate, 0, chars[indexToDuplicate]); modifiedWord = chars.join(''); } break;
             case 'phoneticallySimilar': const subs = {'b':'p','p':'b','d':'t','t':'d','g':'k','k':'g','f':'v','v':'f','s':'z','z':'s'}; let replaced = false; for (let i=0; i<chars.length; i++) { const charLower = chars[i].toLowerCase(); if (subs[charLower]) { chars[i] = preserveCase(chars[i], subs[charLower]); replaced=true; break; } } if(replaced) modifiedWord = chars.join(''); else modifiedWord = generateError(word, 'replacedLetter'); break;
-            case 'capitalization': if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { if (chars[0] === chars[0].toUpperCase()) { chars[0] = chars[0].toLowerCase(); } else { chars[0] = chars[0].toUpperCase(); } modifiedWord = chars.join(''); } break;
-        }
-        if (modifiedWord === word || modifiedWord === "") { if (word.length > 0 && errorType !== 'replacedLetter') { let fallbackWord = generateError(word, 'replacedLetter'); if (fallbackWord !== word) { return fallbackWord; } } return word; } return modifiedWord;
-    }
-
-    window.speechSynthesis.onvoiceschanged = () => {
-        germanVoice = window.speechSynthesis.getVoices().find(v => v.lang === 'de-DE');
-    };
-
-    function playCurrentSentence() {
-        if ('speechSynthesis' in window && allSentences.length > 0) {
-            const utterance = new SpeechSynthesisUtterance(allSentences[currentSentenceIndex]);
-            utterance.lang = 'de-DE';
-            utterance.rate = 0.9;
-            if (germanVoice) utterance.voice = germanVoice;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(utterance);
-        }
-    }
-</script>
-
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => { console.log('Service Worker registriert:', registration); })
-                .catch(error => { console.log('Service Worker Registrierung fehlgeschlagen:', error); });
-        });
-    }
-</script>
-
-</body>
-</html>
+            case 'capitalization': if (chars.length > 0 && chars[0].match(/[A-Za-zÄÖÜäöü]/)) { if (chars[0] === chars[0].toUpperCase()) { chars[0] = chars[0].toLowerCase(); } e
