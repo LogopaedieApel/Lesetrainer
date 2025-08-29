@@ -273,7 +273,7 @@
 
     function processAndCategorizeLists(lists) {
         categorizedLists = lists.reduce((acc, list) => {
-            const category = list.category || 'Allgemein';
+            const category = list.thema || 'Allgemein';
             if (!acc[category]) {
                 acc[category] = [];
             }
