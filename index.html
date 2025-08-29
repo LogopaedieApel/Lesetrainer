@@ -2,7 +2,9 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1, maximum-scale=1">
+    
+    <!-- ANPASSUNG: viewport-fit=cover für korrekte Nutzung der Safe Area auf iOS/PWA-Geräten -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
     
     <!-- ============= PWA-ERGÄNZUNGEN START ============= -->
     <link rel="manifest" href="manifest.json">
@@ -16,8 +18,36 @@
 
     <title>Interaktiver Lese-Trainer</title>
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; touch-action: none; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        /* ANPASSUNG: touch-action: none; hier entfernt, da es jetzt konditionell im Body gesetzt wird */
+        html, body { height: 100%; margin: 0; padding: 0; } 
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            box-sizing: border-box; 
+            /* ANPASSUNG: Safe Area Padding und ursprüngliche 20px hinzufügen */
+            padding-top: calc(20px + env(safe-area-inset-top, 0px));
+            padding-right: calc(20px + env(safe-area-inset-right, 0px));
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(20px + env(safe-area-inset-left, 0px));
+        }
+
+        /* NEUE REGELN FÜR KONDITIONELLES SCROLLEN */
+        body.start-view-active {
+            align-items: flex-start; 
+            overflow-y: auto;
+            touch-action: pan-y;
+        }
+        body.game-view-active, body.finish-view-active {
+            align-items: center;
+            overflow: hidden;
+            touch-action: none;
+        }
+        /* ENDE NEUE REGELN */
+
         #app-container { background-color: #ffffff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; text-align: center; transition: max-width 0.3s ease, min-height 0.3s ease; }
         body.fullscreen-mode { padding: 0; }
         #app-container.two-player-mode { max-width: 100%; height: 100%; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
@@ -172,6 +202,8 @@
         loadMasterList();
         setupEventListeners();
         errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
+        // Initialen Zustand setzen, damit das Scrollen auf der Startseite funktioniert
+        showView(startView); 
     });
 
     function setupEventListeners() {
@@ -191,10 +223,22 @@
         });
     }
 
+    // ANPASSUNG: Funktion showView erweitert, um Body-Klassen für das Scroll-Verhalten zu setzen
     function showView(viewToShow) {
         document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
         viewToShow.classList.add('active');
         mainTitle.style.display = (viewToShow.id === 'start-view') ? 'block' : 'none';
+        
+        // Klassen am Body entfernen und neue hinzufügen
+        document.body.classList.remove('start-view-active', 'game-view-active', 'finish-view-active');
+
+        if (viewToShow.id === 'start-view') {
+            document.body.classList.add('start-view-active');
+        } else if (viewToShow.id === 'game-view') {
+            document.body.classList.add('game-view-active');
+        } else if (viewToShow.id === 'finish-view') {
+            document.body.classList.add('finish-view-active');
+        }
     }
 
     function showStartView() {
@@ -368,7 +412,7 @@
     }
 
     // ===============================================
-    // ========= START DER KORRIGIERTEN LOGIK ========
+    // ========= START DER KORRIGIERTEN LOGIK (Touch Handling ist hier drin) ========
     // ===============================================
 
     function handleTwoPlayerWordClick(word, button, player) {
