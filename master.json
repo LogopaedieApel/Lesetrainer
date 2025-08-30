@@ -41,6 +41,13 @@
       "description": "Bekannte Zitate aus verschiedenen Bereichen.",
       "file": "lists/Zitate 1.json",
       "thema": "Zitate"
+    },
+    {
+      "id": "reime_1_geteilt",
+      "title": "Reime 1 (geteilte Sätze)",
+      "description": "Geteilte Sätze, die sich reimen.",
+      "file": "lists/Reime 1 geteilte Sätze.json",
+      "thema": "Reime"
     }
   ]
 }
