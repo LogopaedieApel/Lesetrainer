@@ -48,6 +48,83 @@
       "description": "Geteilte Sätze, die sich reimen.",
       "file": "lists/Reime 1 geteilte Sätze.json",
       "thema": "Reime"
+    },
+    {
+      "id": "reimwoerter_sammlung_1",
+      "title": "Reimwörter Sammlung 1 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 1.",
+      "file": "lists/Reimwörter Sammlung 1 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_10",
+      "title": "Reimwörter Sammlung 10 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 10.",
+      "file": "lists/Reimwörter Sammlung 10 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_11",
+      "title": "Reimwörter Sammlung 11 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 11.",
+      "file": "lists/Reimwörter Sammlung 11 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_2",
+      "title": "Reimwörter Sammlung 2 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 2.",
+      "file": "lists/Reimwörter Sammlung 2 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_3",
+      "title": "Reimwörter Sammlung 3 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 3.",
+      "file": "lists/Reimwörter Sammlung 3 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_4",
+      "title": "Reimwörter Sammlung 4 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 4.",
+      "file": "lists/Reimwörter Sammlung 4 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_5",
+      "title": "Reimwörter Sammlung 5 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 5.",
+      "file": "lists/Reimwörter Sammlung 5 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_6",
+      "title": "Reimwörter Sammlung 6 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 6.",
+      "file": "lists/Reimwörter Sammlung 6 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_7",
+      "title": "Reimwörter Sammlung 7 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 7.",
+      "file": "lists/Reimwörter Sammlung 7 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_8",
+      "title": "Reimwörter Sammlung 8 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 8.",
+      "file": "lists/Reimwörter Sammlung 8 Sätze.json",
+      "thema": "Reimwörter"
+    },
+    {
+      "id": "reimwoerter_sammlung_9",
+      "title": "Reimwörter Sammlung 9 (Sätze)",
+      "description": "Sätze aus der Reimwörter Sammlung 9.",
+      "file": "lists/Reimwörter Sammlung 9 Sätze.json",
+      "thema": "Reimwörter"
     }
   ]
 }
