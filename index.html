@@ -508,7 +508,8 @@
             showSinglePlayerFinishView();
             return;
         }
-        isFlashing = false; // Alte Sequenzen stoppen
+        isFlashing = false; // Alte Sequenzen stoppen (wichtig bei automatischem Weiter)
+        await delay(10); // Kurz warten, um sicherzustellen, dass alte Schleifen terminieren
 
         const flashDisplay = document.getElementById('flash-word-display');
         const instructionText = document.querySelector('#game-area-content p');
@@ -537,11 +538,12 @@
 
             repeatButton.onclick = async () => {
                 isFlashing = false; // Aktuelle Sequenz abbrechen
-                await delay(50); // Kurz warten, damit die alte Schleife beendet wird
+                await delay(50); // Kurz warten, damit die alte Schleife sicher beendet wird
                 reconstructedWords = [];
                 feedbackMessage.textContent = '';
                 currentReconstruction.textContent = '\u00A0';
                 wordPool.innerHTML = '';
+                // Die neue Sequenz starten
                 await startFlashWordSequence(originalWords, flashDisplay, wordPool);
             };
             
@@ -660,7 +662,9 @@
             return;
         }
         roundOver = false;
-        isFlashing = false;
+        isFlashing = false; // Alte Sequenz stoppen
+        await delay(10); // Kurz warten
+
         document.getElementById('next-sentence-button').style.display = 'none';
         const p1PlayAudio = document.getElementById('p1-play-audio-button');
         const p2PlayAudio = document.getElementById('p2-play-audio-button');
@@ -685,8 +689,8 @@
 
             const repeatHandler = async () => {
                 if (roundOver) return;
-                isFlashing = false;
-                await delay(50);
+                isFlashing = false; // Signal zum Abbrechen senden
+                await delay(50); // Kurz warten, damit die alte Schleife sicher beendet wird
                 [player1, player2].forEach(p => {
                     p.reconstructedWords = [];
                     p.reconstructionEl.textContent = '\u00A0';
@@ -801,26 +805,37 @@
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // ==========================================================
+    // ===== HIER IST DIE ENTSCHEIDENDE ÄNDERUNG ==================
+    // ==========================================================
     async function startFlashWordSequence(words, displayEl, wordPoolEl) {
-        isFlashing = true;
+        isFlashing = true; // Setzt das Signal, dass eine Sequenz aktiv ist
         displayEl.textContent = '';
+        wordPoolEl.innerHTML = ''; // Leert den Wort-Pool zu Beginn
         
-        await delay(200); // Kurze Pause vor Start
+        await delay(200);
 
         for (const word of words) {
-            if (!isFlashing) break; // Abbruchprüfung
+            // PRÜFUNG 1: Vor dem Anzeigen des Wortes prüfen, ob die Sequenz abgebrochen wurde.
+            if (!isFlashing) break;
+            
             displayEl.textContent = word;
             await delay(flashWordDuration);
-            if (!isFlashing) break; // Abbruchprüfung
+            
+            // PRÜFUNG 2: Auch nach der Wartezeit prüfen, falls der Klick währenddessen erfolgte.
+            if (!isFlashing) break;
+
             displayEl.textContent = '';
             await delay(150);
         }
         
-        if (isFlashing) { // Nur wenn nicht abgebrochen wurde
+        // Die Wörter zum Nachbauen nur anzeigen, wenn die Sequenz regulär beendet wurde.
+        if (isFlashing) { 
             displayWords(shuffleArray(generateWordPool(words)), wordPoolEl);
         }
-        isFlashing = false;
-        displayEl.textContent = '';
+
+        isFlashing = false; // Signal zurücksetzen
+        displayEl.textContent = ''; // Sicherstellen, dass die Anzeige leer ist
     }
     
     function shuffleArray(array) {
@@ -896,16 +911,6 @@
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         }
-    }
-</script>
-
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => { console.log('Service Worker registriert:', registration); })
-                .catch(error => { console.log('Service Worker Registrierung fehlgeschlagen:', error); });
-        });
     }
 </script>
 
