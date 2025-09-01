@@ -275,7 +275,7 @@
     let selectedLists = [];
     let presentationMode = 'audio';
     let flashWordDuration = 1000;
-    let isFlashing = false; // NEU: Signal für laufende/abzubrechende Sequenz
+    let currentFlashSequenceId = 0; // Eindeutige ID für jede Blitz-Sequenz
 
     // --- INITIALISIERUNG ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -508,8 +508,7 @@
             showSinglePlayerFinishView();
             return;
         }
-        isFlashing = false; // Alte Sequenzen stoppen (wichtig bei automatischem Weiter)
-        await delay(10); // Kurz warten, um sicherzustellen, dass alte Schleifen terminieren
+        currentFlashSequenceId++; // Alle alten Sequenzen invalidieren
 
         const flashDisplay = document.getElementById('flash-word-display');
         const instructionText = document.querySelector('#game-area-content p');
@@ -536,21 +535,12 @@
             repeatButton.style.display = 'inline-block';
             flashDisplay.style.display = 'flex';
 
-            // ==========================================================
-            // ===== HIER IST EINE ENTSCHEIDENDE ÄNDERUNG =============
-            // ==========================================================
-            repeatButton.onclick = async () => {
-                isFlashing = false; // Aktuelle Sequenz abbrechen (Stopp-Signal)
-                await delay(50);    // Kurz warten, damit die alte Schleife sicher beendet wird
-                
-                // UI für den Neustart zurücksetzen
+            repeatButton.onclick = () => {
                 reconstructedWords = [];
                 feedbackMessage.textContent = '';
                 currentReconstruction.textContent = '\u00A0';
                 wordPool.innerHTML = '';
-                
-                // Die neue Sequenz starten
-                await startFlashWordSequence(originalWords, flashDisplay, wordPool);
+                startFlashWordSequence(originalWords, flashDisplay, wordPool);
             };
             
             await startFlashWordSequence(originalWords, flashDisplay, wordPool);
@@ -587,7 +577,7 @@
                 document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = false);
             }, 1500);
         } else if (reconstructedWords.length === originalWords.length) {
-            isFlashing = false;
+            currentFlashSequenceId++; // Stoppt jede noch laufende Sequenz
             feedbackMessage.textContent = 'Super, das ist richtig!';
             feedbackMessage.className = 'correct';
             document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = true);
@@ -668,8 +658,7 @@
             return;
         }
         roundOver = false;
-        isFlashing = false; // Alte Sequenz stoppen
-        await delay(10); // Kurz warten
+        currentFlashSequenceId++; // Alle alten Sequenzen invalidieren
 
         document.getElementById('next-sentence-button').style.display = 'none';
         const p1PlayAudio = document.getElementById('p1-play-audio-button');
@@ -693,27 +682,16 @@
                 p.flashDisplayEl.style.display = 'flex';
             });
             
-            // ==========================================================
-            // ===== HIER IST EINE ENTSCHEIDENDE ÄNDERUNG =============
-            // ==========================================================
-            const repeatHandler = async () => {
+            const repeatHandler = () => {
                 if (roundOver) return;
-                isFlashing = false; // Signal zum Abbrechen senden
-                await delay(50); // Kurz warten, damit die alte Schleife sicher beendet wird
-                
-                // UI für beide Spieler zurücksetzen
                 [player1, player2].forEach(p => {
                     p.reconstructedWords = [];
                     p.reconstructionEl.textContent = '\u00A0';
                     p.feedbackEl.textContent = '';
                     p.wordPoolEl.innerHTML = '';
                 });
-                
-                // Neue Sequenzen für beide Spieler gleichzeitig starten
-                await Promise.all([
-                    startFlashWordSequence(originalWords, player1.flashDisplayEl, player1.wordPoolEl),
-                    startFlashWordSequence(originalWords, player2.flashDisplayEl, player2.wordPoolEl)
-                ]);
+                startFlashWordSequence(originalWords, player1.flashDisplayEl, player1.wordPoolEl);
+                startFlashWordSequence(originalWords, player2.flashDisplayEl, player2.wordPoolEl);
             };
             player1.repeatBtn.onclick = repeatHandler;
             player2.repeatBtn.onclick = repeatHandler;
@@ -762,7 +740,7 @@
             }, 1000);
         } else if (player.reconstructedWords.length === originalWords.length) {
             roundOver = true; 
-            isFlashing = false;
+            currentFlashSequenceId++; // Stoppt jede noch laufende Sequenz
             [player1, player2].forEach(p => p.repeatBtn.style.display = 'none');
             const winner = player;
             const loser = (player.id === 1) ? player2 : player1;
@@ -819,37 +797,38 @@
     }
 
     // ==========================================================
-    // ===== HIER IST DIE ÜBERARBEITETE, ABBRECHBARE FUNKTION ====
+    // ===== HIER IST DIE ROBUSTE, ABBRECHBARE FUNKTION (V2) ====
     // ==========================================================
     async function startFlashWordSequence(words, displayEl, wordPoolEl) {
-        isFlashing = true; // Setzt das Signal, dass eine Sequenz aktiv ist
+        // Jede neue Sequenz erhöht den globalen Zähler und merkt sich ihre eigene ID.
+        const mySequenceId = ++currentFlashSequenceId;
+
         displayEl.textContent = '';
-        wordPoolEl.innerHTML = ''; // Leert den Wort-Pool zu Beginn
-        
+        if (wordPoolEl) wordPoolEl.innerHTML = ''; // Leert den Wort-Pool zu Beginn
+
         await delay(200);
 
         for (const word of words) {
-            // PRÜFUNG 1: Vor dem Anzeigen des Wortes prüfen, ob die Sequenz abgebrochen wurde.
-            if (!isFlashing) break;
-            
+            // PRÜFUNG 1: Ist meine ID noch die aktuellste? Wenn nicht -> Abbruch.
+            if (mySequenceId !== currentFlashSequenceId) return;
+
             displayEl.textContent = word;
             await delay(flashWordDuration);
-            
-            // PRÜFUNG 2: Auch nach der Wartezeit prüfen, falls der Klick währenddessen erfolgte.
-            if (!isFlashing) break;
+
+            // PRÜFUNG 2: Auch nach der Wartezeit noch einmal prüfen.
+            if (mySequenceId !== currentFlashSequenceId) return;
 
             displayEl.textContent = '';
             await delay(150);
         }
-        
-        // Die Wörter zum Nachbauen nur anzeigen, wenn die Sequenz regulär beendet wurde.
-        if (isFlashing) { 
-            const wordPoolData = (gameMode === 'single') ? null : (displayEl.id.includes('p1') ? player1 : player2);
-            displayWords(shuffleArray(generateWordPool(words)), wordPoolEl, wordPoolData);
-        }
 
-        isFlashing = false; // Signal zurücksetzen
-        displayEl.textContent = ''; // Sicherstellen, dass die Anzeige leer ist
+        // Die Wörter zum Nachbauen nur anzeigen, wenn diese Sequenz nicht unterbrochen wurde.
+        if (mySequenceId === currentFlashSequenceId) {
+            if (wordPoolEl) {
+                const wordPoolData = (gameMode === 'single') ? null : (displayEl.id.includes('p1') ? player1 : player2);
+                displayWords(shuffleArray(generateWordPool(words)), wordPoolEl, wordPoolData);
+            }
+        }
     }
     
     function shuffleArray(array) {
