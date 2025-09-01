@@ -125,6 +125,13 @@
       "description": "Sätze aus der Reimwörter Sammlung 9.",
       "file": "lists/Reimwörter Sammlung 9 Sätze.json",
       "thema": "Reimwörter"
+    },
+    {
+      "id": "artikulation_sch_initial_zwei_woerter",
+      "title": "Artikulation sch initial zwei Wörter",
+      "description": "Wörter mit sch am Anfang.",
+      "file": "lists/Artikulation sch initial zwei Wörter.json",
+      "thema": "Artikulation"
     }
   ]
 }
