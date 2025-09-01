@@ -18,15 +18,15 @@
 
     <title>Interaktiver Lese-Trainer</title>
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; } 
-        body { 
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body {
             /* GEÄNDERT: Schriftart zu Lexend */
             font-family: 'Lexend', sans-serif;
-            background-color: #f0f2f5; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            box-sizing: border-box; 
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
             padding-top: calc(20px + env(safe-area-inset-top, 0px));
             padding-right: calc(20px + env(safe-area-inset-right, 0px));
             padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
@@ -102,7 +102,7 @@
         .remove-list-button { background-color: #dc3545; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 1rem; line-height: 25px; padding: 0; cursor: pointer; flex-shrink: 0;}
         #start-game-button { width: 100%; padding: 15px; font-size: 1.2rem; margin-top: 30px; }
 
-        /* --- NEU: STILE FÜR BLITZWORT-MODUS --- */
+        /* --- STILE FÜR BLITZWORT-MODUS & WIEDERHOLEN-BUTTON --- */
         .flash-word-display {
             font-size: 2.5rem;
             font-weight: bold;
@@ -126,14 +126,21 @@
         .game-area-content.hidden {
             visibility: hidden;
         }
+        .repeat-button {
+            background-color: #17a2b8; /* Cyan-Farbe, konsistent mit "Satz vorlesen" */
+            margin-bottom: 15px;
+        }
+        .repeat-button:hover:not(:disabled) {
+            background-color: #138496; /* Dunkleres Cyan */
+        }
         /* --- ENDE NEU --- */
         
         @media (min-width: 800px) {
             #settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; align-items: start; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
             #settings-grid .settings-section { margin-top: 0; padding-top: 0; border-top: none; }
             /* --- GEÄNDERT: Grid-Spalten anpassen, um Platz für neuen Modus zu schaffen --- */
-            #settings-grid .settings-section:nth-child(4) { 
-                grid-column: 1 / -1; 
+            #settings-grid .settings-section:nth-child(4) {
+                grid-column: 1 / -1;
             }
         }
     </style>
@@ -183,7 +190,7 @@
                     <h3>Präsentationsmodus</h3>
                     <div class="game-mode-selection">
                          <label><input type="radio" name="presentationMode" value="audio" checked> Satz vorlesen</label>
-                         <label><input type="radio" name="presentationMode" value="flash"> Blitzwörter</label>
+                         <label><input type="radio" name="presentationMode" value="flash"> Blitzlesen</label>
                     </div>
                     <div id="flash-word-settings" style="display: none; margin-top: 15px;">
                         <label for="flash-word-duration">Anzeigedauer:</label>
@@ -255,7 +262,6 @@
     const errorFrequencySlider = document.getElementById('error-frequency-slider');
     const errorFrequencyValueSpan = document.getElementById('error-frequency-value');
     const autoContinueToggle = document.getElementById('auto-continue-toggle');
-    // NEU: DOM-Elemente für den Blitzwort-Modus
     const presentationModeRadios = document.querySelectorAll('input[name="presentationMode"]');
     const flashWordSettings = document.getElementById('flash-word-settings');
     const flashWordDurationSelect = document.getElementById('flash-word-duration');
@@ -277,7 +283,6 @@
     let autoContinueEnabled = false;
     let categorizedLists = {};
     let selectedLists = [];
-    // NEU: Globale Variablen für den Blitzwort-Modus
     let presentationMode = 'audio';
     let flashWordDuration = 1000;
 
@@ -285,9 +290,9 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadMasterList();
         setupEventListeners();
-        populateFlashDurations(); // NEU
+        populateFlashDurations();
         errorFrequencyValueSpan.textContent = errorFrequencySlider.value;
-        showView(startView); 
+        showView(startView);
     });
 
     function setupEventListeners() {
@@ -309,8 +314,6 @@
             errorFrequencyValueSpan.textContent = selectedErrorFrequency;
         });
         autoContinueToggle.addEventListener('change', () => autoContinueEnabled = autoContinueToggle.checked);
-
-        // NEU: Event-Listener für Präsentationsmodus
         presentationModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
             presentationMode = e.target.value;
             flashWordSettings.style.display = presentationMode === 'flash' ? 'block' : 'none';
@@ -320,7 +323,6 @@
         });
     }
 
-    // NEU: Funktion zum Befüllen des Dropdowns für die Anzeigedauer
     function populateFlashDurations() {
         for (let i = 1000; i >= 100; i -= 100) {
             const option = document.createElement('option');
@@ -468,7 +470,6 @@
     function showStartView() {
         document.body.classList.remove('fullscreen-mode');
         appContainer.classList.remove('two-player-mode');
-        // Reset settings to default
         gameMode = 'single';
         document.querySelector('input[name="gameMode"][value="single"]').checked = true;
         roundsContainer.style.display = 'none';
@@ -476,11 +477,9 @@
         errorModeToggle.checked = false; errorModeEnabled = false;
         errorTypeSelection.style.display = 'none';
         autoContinueToggle.checked = false; autoContinueEnabled = false;
-        // NEU: Reset für Präsentationsmodus
         presentationMode = 'audio';
         document.querySelector('input[name="presentationMode"][value="audio"]').checked = true;
         flashWordSettings.style.display = 'none';
-        // Reset game state
         allSentences = []; currentSentenceIndex = 0;
         selectedLists = [];
         updateSelectedListsUI();
@@ -489,11 +488,11 @@
 
     function startSinglePlayerGame() {
         appContainer.classList.remove('two-player-mode');
-        // GEÄNDERT: HTML-Struktur enthält jetzt Platzhalter für Blitzwörter
         gameView.innerHTML = `
             <div class="single-player-game">
                 <div id="progress-indicator"></div>
                 <div id="flash-word-display" class="flash-word-display" style="display: none;"></div>
+                <button id="repeat-sequence-button" class="repeat-button" style="display: none;">Wiederholen</button>
                 <div id="game-area-content">
                     <p>Höre gut zu und baue den Satz nach.</p>
                     <div id="current-reconstruction">&nbsp;</div>
@@ -512,28 +511,26 @@
         loadSinglePlayerSentence(0);
     }
     
-    // --- NEUE HILFSFUNKTIONEN ---
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
     
     async function startFlashWordSequence(words, displayEl, gameContentEl) {
-        gameContentEl.classList.add('hidden'); // Spielinterface ausblenden
+        gameContentEl.classList.add('hidden');
         displayEl.style.display = 'flex';
 
-        await delay(500); // Kurze Pause vor dem Start
+        await delay(500);
 
         for (const word of words) {
             displayEl.textContent = word;
             await delay(flashWordDuration);
             displayEl.textContent = '';
-            await delay(150); // Pause zwischen den Wörtern
+            await delay(150);
         }
 
         displayEl.style.display = 'none';
-        gameContentEl.classList.remove('hidden'); // Spielinterface einblenden
+        gameContentEl.classList.remove('hidden');
     }
-    // --- ENDE NEU ---
 
     async function loadSinglePlayerSentence(index) {
         if (index >= allSentences.length) {
@@ -541,7 +538,6 @@
             return;
         }
 
-        // GEÄNDERT: Referenzen auf neue DOM-Elemente
         const flashDisplay = document.getElementById('flash-word-display');
         const gameAreaContent = document.getElementById('game-area-content');
         const instructionText = gameAreaContent.querySelector('p');
@@ -550,11 +546,13 @@
         const nextSentenceButton = document.getElementById('next-sentence-button');
         const wordPool = document.getElementById('word-pool');
         const playAudioButton = document.getElementById('play-audio-button');
-        
+        const repeatButton = document.getElementById('repeat-sequence-button');
+
         reconstructedWords = [];
         feedbackMessage.textContent = '';
         feedbackMessage.className = '';
         nextSentenceButton.style.display = 'none';
+        repeatButton.style.display = 'none';
         currentReconstruction.textContent = '\u00A0';
         wordPool.innerHTML = '';
         document.getElementById('progress-indicator').textContent = `Satz ${index + 1} von ${allSentences.length}`;
@@ -562,14 +560,28 @@
         const currentSentence = allSentences[index];
         originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
         
-        // GEÄNDERT: Logik für Präsentationsmodus
         if (presentationMode === 'flash') {
             instructionText.textContent = 'Merke dir die Wörter und baue den Satz nach.';
-            playAudioButton.style.display = 'none'; // Audio-Button im Blitz-Modus ausblenden
+            playAudioButton.style.display = 'none';
+
+            repeatButton.onclick = async () => {
+                reconstructedWords = [];
+                feedbackMessage.textContent = '';
+                feedbackMessage.className = '';
+                currentReconstruction.textContent = '\u00A0';
+                document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = false);
+                repeatButton.style.display = 'none';
+                await startFlashWordSequence(originalWords, flashDisplay, gameAreaContent);
+                repeatButton.style.display = 'inline-block';
+            };
+
             await startFlashWordSequence(originalWords, flashDisplay, gameAreaContent);
+            repeatButton.style.display = 'inline-block';
+
         } else { // 'audio' mode
             instructionText.textContent = 'Höre gut zu und baue den Satz nach.';
             playAudioButton.style.display = 'inline-block';
+            repeatButton.style.display = 'none';
             playCurrentSentence();
         }
         
@@ -602,6 +614,7 @@
             feedbackMessage.textContent = 'Super, das ist richtig!';
             feedbackMessage.className = 'correct';
             document.querySelectorAll('#word-pool .word-button').forEach(btn => btn.disabled = true);
+            document.getElementById('repeat-sequence-button').style.display = 'none';
             const reconstructionBox = document.getElementById('current-reconstruction');
             reconstructionBox.classList.add('flash-success');
             reconstructionBox.addEventListener('animationend', () => {
@@ -630,12 +643,12 @@
 
     function startTwoPlayerGame() {
         appContainer.classList.add('two-player-mode');
-        // GEÄNDERT: HTML für 2-Spieler-Modus mit Blitzwort-Display
         gameView.innerHTML = `
         <div id="two-player-container">
             <div id="player2-area" class="player-area">
                 <div class="player-header"><h2>Spieler 2</h2><div id="p2-score" class="score">Punkte: 0</div></div>
                 <div id="p2-flash-word-display" class="flash-word-display" style="display:none;"></div>
+                <button id="p2-repeat-sequence-button" class="repeat-button" style="display:none; transform: rotate(180deg);">Wiederholen</button>
                 <div id="p2-game-area-content">
                     <div id="p2-progress" class="progress-indicator"></div>
                     <div id="p2-reconstruction" class="current-reconstruction">&nbsp;</div>
@@ -651,6 +664,7 @@
             <div id="player1-area" class="player-area">
                 <div class="player-header"><h2>Spieler 1</h2><div id="p1-score" class="score">Punkte: 0</div></div>
                  <div id="p1-flash-word-display" class="flash-word-display" style="display:none;"></div>
+                 <button id="p1-repeat-sequence-button" class="repeat-button" style="display:none;">Wiederholen</button>
                  <div id="p1-game-area-content">
                     <div id="p1-progress" class="progress-indicator"></div>
                     <div id="p1-reconstruction" class="current-reconstruction">&nbsp;</div>
@@ -676,10 +690,16 @@
             return;
         }
         roundOver = false;
-        document.getElementById('next-sentence-button').style.display = 'none';
+        const nextButton = document.getElementById('next-sentence-button');
         const p1PlayAudio = document.getElementById('p1-play-audio-button');
         const p2PlayAudio = document.getElementById('p2-play-audio-button');
+        const p1RepeatButton = document.getElementById('p1-repeat-sequence-button');
+        const p2RepeatButton = document.getElementById('p2-repeat-sequence-button');
 
+        nextButton.style.display = 'none';
+        p1RepeatButton.style.display = 'none';
+        p2RepeatButton.style.display = 'none';
+        
         [player1, player2].forEach(p => {
             p.reconstructedWords = [];
             p.reconstructionEl.textContent = '\u00A0';
@@ -691,14 +711,39 @@
         const currentSentence = allSentences[index];
         originalWords = currentSentence.replace(/[.,!?;]$/, '').split(' ');
         
-        // GEÄNDERT: Logik für Präsentationsmodus
         if (presentationMode === 'flash') {
             [p1PlayAudio, p2PlayAudio].forEach(btn => btn.style.display = 'none');
-            // Starte beide Sequenzen gleichzeitig
+
+            const repeatHandler = async () => {
+                if (roundOver) return;
+                [player1, player2].forEach(p => {
+                    p.reconstructedWords = [];
+                    p.reconstructionEl.textContent = '\u00A0';
+                    p.feedbackEl.textContent = '';
+                    p.wordPoolEl.querySelectorAll('.word-button').forEach(btn => btn.disabled = false);
+                });
+                p1RepeatButton.style.display = 'none';
+                p2RepeatButton.style.display = 'none';
+
+                await Promise.all([
+                    startFlashWordSequence(originalWords, player1.flashDisplayEl, player1.gameContentEl),
+                    startFlashWordSequence(originalWords, player2.flashDisplayEl, player2.gameContentEl)
+                ]);
+                if (!roundOver) {
+                    p1RepeatButton.style.display = 'inline-block';
+                    p2RepeatButton.style.display = 'inline-block';
+                }
+            };
+            p1RepeatButton.onclick = repeatHandler;
+            p2RepeatButton.onclick = repeatHandler;
+
             await Promise.all([
                 startFlashWordSequence(originalWords, player1.flashDisplayEl, player1.gameContentEl),
                 startFlashWordSequence(originalWords, player2.flashDisplayEl, player2.gameContentEl)
             ]);
+            p1RepeatButton.style.display = 'inline-block';
+            p2RepeatButton.style.display = 'inline-block';
+
         } else {
              [p1PlayAudio, p2PlayAudio].forEach(btn => btn.style.display = 'block');
              playCurrentSentence();
@@ -727,7 +772,7 @@
             player.feedbackEl.className = 'feedback-message incorrect';
             const playerButtons = player.wordPoolEl.querySelectorAll('.word-button');
             setTimeout(() => {
-                if (!roundOver) { 
+                if (!roundOver) {
                     player.reconstructedWords = [];
                     player.reconstructionEl.textContent = '\u00A0';
                     player.feedbackEl.textContent = '';
@@ -735,7 +780,10 @@
                 }
             }, 1000);
         } else if (player.reconstructedWords.length === originalWords.length) {
-            roundOver = true; 
+            roundOver = true;
+            document.getElementById('p1-repeat-sequence-button').style.display = 'none';
+            document.getElementById('p2-repeat-sequence-button').style.display = 'none';
+
             const winner = player;
             const loser = (player.id === 1) ? player2 : player1;
             const roundPoints = originalWords.length;
@@ -800,7 +848,7 @@
             button.textContent = word;
             button.classList.add('word-button');
             const handleInteraction = (event) => {
-                event.preventDefault(); 
+                event.preventDefault();
                 if (gameMode === 'single') handleSinglePlayerWordClick(word, button);
                 else { if (button.disabled) return; handleTwoPlayerWordClick(word, button, player); }
             };
@@ -829,7 +877,7 @@
         return pool;
     }
 
-    function generateError(word, errorType) { 
+    function generateError(word, errorType) {
         if (word.length <= 1 && !['capitalization', 'replacedLetter', 'duplicatedLetters'].includes(errorType)) {return word;}
         let modifiedWord = word; let chars = word.split('');
         const preserveCase = (originalChar, newChar) => {if (!originalChar) return newChar; if (originalChar === originalChar.toUpperCase() && originalChar.match(/[A-ZÄÖÜ]/)) { return newChar.toUpperCase(); } return newChar.toLowerCase(); };
